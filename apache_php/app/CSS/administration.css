@@ -1,0 +1,48 @@
+
+
+tr:first-of-type {
+    background: none;
+    border-left:none;
+}
+
+#admin_content .highlighted-row {
+    background: rgba(var(--primaryColor), 0.4);
+    border-left: rgba(var(--primaryColor), 0.8) solid 2px;
+}
+
+tr:hover .custom-input {
+    background: white;
+}
+
+/* --- */
+
+
+#admin_content .btn-primary {
+    padding: 0.3em 0.6em;
+    margin: 0.5em;
+}
+
+#admin_content .custom-input, #admin_content .disabled-input {
+    width: 10em;
+}
+
+#admin_content .custom-input {
+    padding: 0.3em 0.3em;
+    box-shadow: rgba(205,205,205,0.4) inset 1px 1px 3px 3px;
+    transition: box-shadow 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+#admin_content .disabled-input {
+    padding: 0.3em 0.3em;
+    color: #666;
+    background: none;
+}
+
+#admin_content select{
+    padding: 0.3em 1em 0.3em 0.3em;
+    margin:0;
+}
+
+.action-td {
+    padding-left: 0;
+    padding-right: 0;
+}

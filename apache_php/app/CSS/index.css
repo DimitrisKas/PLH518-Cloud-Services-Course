@@ -1,0 +1,79 @@
+
+#index-body {
+    overflow: hidden;
+
+}
+
+.upper-half {
+    background: url("../assets/cinema_hero2.jpg") no-repeat fixed;
+    background-size: cover;
+    background-position-y: 240%;
+    height: 50vh;
+}
+
+.bottom-half {
+    height: 50vh;
+    box-shadow: rgba(10, 10, 10, 0.5) 0px 0px 10px 3px;
+}
+
+#top-nav {
+    position: absolute;
+    top:10%;
+    left: 10%;
+}
+
+#Logo-Text{
+    color: white;
+}
+
+
+#index-main-form {
+    position: absolute;
+    top:50%;
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+}
+
+#index-main-form .card {
+    padding: 1.5em;
+}
+
+#index-main-form  h3 {
+    margin: 0 0 0.8em;
+}
+
+#index-main-form input {
+    margin-bottom: 0.8em;
+}
+
+#index-main-form label {
+    display: none;
+}
+
+#index-main-form input[type=submit] {
+    font-weight: lighter;
+}
+
+#signup-text {
+    margin-top: 1em;
+    text-align: center;
+    transition: text-decoration-line 0.3s ease-out;
+    cursor: pointer;
+}
+
+#signup-text:hover {
+    text-decoration-line: underline;
+}
+
+#index-feedback {
+    position: absolute;
+    top: 30%;
+    left: -10%;
+    margin: 0.5em;
+    transform: translate(-100%, -50%);
+}
+
+#index-feedback ul {
+    margin: 0.5em 0 0 0;
+}
