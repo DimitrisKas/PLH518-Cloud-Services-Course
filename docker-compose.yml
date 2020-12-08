@@ -1,0 +1,52 @@
+version: "3.8"
+services:
+  
+  apache-php:
+    # image: "httpd:2.4"
+    build:
+      context: './apache_php'
+      dockerfile: apache_php_dockerfile
+    ports: 
+      - '80:80'
+    volumes:
+        # - ./apache_php/httpd.conf:/usr/local/apache2/conf/httpd.conf
+        - ./apache_php/app/:/var/www/html/
+    networks:
+      proj2-net:
+  
+  mysql:
+    # image: "mysql"
+    build:
+      context: './mysql'
+      dockerfile: myslq_dockerfile
+    volumes:
+       - mysql-storage:/var/lib/mysql
+    ports: 
+      - '3306:3306'
+    networks:
+      proj2-net:
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234securePass
+  
+  # mongo:
+  #   image: "mongo"
+
+  # keyrock: // Keyrock IDM
+  #   image: "fiware/idm"
+  
+  # ocb:    // Orion Context Broken
+  #   image: "fiware/orion"
+  #   links:
+  #    - mongo
+  #    ports:
+  #    - "1026:1026"
+  
+  # proxy:  // PEP Proxy Wilma
+  #   image: "fiware/pep-proxy"
+  
+volumes:
+  mysql-storage:
+
+networks:
+  proj2-net:
+    external: true
