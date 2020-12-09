@@ -287,7 +287,7 @@ class User
         $conn = OpenCon(true);
 
         $sql_str = "SELECT * FROM Users WHERE USERNAME=? AND PASSWORD=?";
-        $stmt = $conn->prepare($sql_str); $stmt = $conn->prepare($sql_str);
+        $stmt = $conn->prepare($sql_str); 
         $stmt->bind_param("ss",$_username, $_password);
         $_username = $username;
         $_password = $password;

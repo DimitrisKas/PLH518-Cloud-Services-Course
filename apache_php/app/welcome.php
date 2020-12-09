@@ -1,10 +1,11 @@
 <?php
-include_once '../db_scripts/Models/Users.php';
-include_once '../db_scripts/db_connection.php';
-include_once('../Utils/Random.php');
-include_once('../Utils/Logs.php');
-
 session_start();
+
+include_once('db_scripts/Models/Users.php');
+include_once('db_scripts/db_connection.php');
+include_once('Utils/Random.php');
+include_once('Utils/Logs.php');
+
 logger("-- In Welcome.php");
 if (isset($_SESSION['login']) && $_SESSION['login'] === true)
 {

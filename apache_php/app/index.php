@@ -1,10 +1,12 @@
 <?php
-include_once('../db_scripts/Models/Users.php');
-include_once('../db_scripts/drop_db.php');
-include_once('../db_scripts/create_db.php');
-include_once('../db_scripts/create_tables.php');
-include_once('../Utils/Random.php');
-include_once('../Utils/Logs.php');
+session_start();
+
+include_once('db_scripts/Models/Users.php');
+include_once('db_scripts/drop_db.php');
+include_once('db_scripts/create_db.php');
+include_once('db_scripts/create_tables.php');
+include_once('Utils/Random.php');
+include_once('Utils/Logs.php');
 
 function initDB()
 {
@@ -50,7 +52,6 @@ $f_title = "";
 $f_text  = "";
 $isSigningUp = false;
 
-session_start();
 
 // Check if logging out
 if (isset($_GET['logout']))

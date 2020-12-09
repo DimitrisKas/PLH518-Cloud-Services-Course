@@ -39,7 +39,7 @@ class Movie
 
         $conn = OpenCon(true);
 
-        $sql_str = "INSERT INTO movies VALUES(?, ?, ?, ?, ?, ?)";
+        $sql_str = "INSERT INTO Movies VALUES(?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql_str);
 
         if (!$stmt->bind_param("ssssss", $this->id,$this->title,$this->start_date,$this->end_date,$this->cinema_name,$this->category))
@@ -72,7 +72,7 @@ class Movie
     {
         $conn = OpenCon(true);
 
-        $sql_str = "SELECT ID FROM movies WHERE id=?";
+        $sql_str = "SELECT ID FROM Movies WHERE id=?";
         $stmt = $conn->prepare($sql_str);
         $stmt->bind_param("s",$id);
         $id = $this->id;
@@ -97,7 +97,7 @@ class Movie
     {
         $conn = OpenCon(true);
 
-        $sql_str = "UPDATE movies SET TITLE=?, STARTDATE=?, ENDDATE=?, CINEMANAME=?, CATEGORY=? WHERE id=?";
+        $sql_str = "UPDATE Movies SET TITLE=?, STARTDATE=?, ENDDATE=?, CINEMANAME=?, CATEGORY=? WHERE id=?";
         $stmt = $conn->prepare($sql_str);
         $stmt->bind_param("ssssss", $title,$start_date, $end_date, $cinema_name, $category, $id);
 
@@ -123,7 +123,7 @@ class Movie
     {
         $conn = OpenCon(true);
 
-        $sql_str = "DELETE FROM movies WHERE id=?";
+        $sql_str = "DELETE FROM Movies WHERE id=?";
         $stmt = $conn->prepare($sql_str);
         $stmt->bind_param("s",$id);
 
@@ -154,8 +154,8 @@ class Movie
         $conn = OpenCon(true);
 
         $sql_str = "SELECT m.ID as m_ID,  m.TITLE, m.STARTDATE, m.ENDDATE, m.CINEMANAME, m.CATEGORY, f.ID as f_ID 
-                    FROM movies m 
-                        LEFT JOIN favorites f ON f.USERID = ? AND f.MOVIEID = m.ID;";
+                    FROM Movies m 
+                        LEFT JOIN Favorites f ON f.USERID = ? AND f.MOVIEID = m.ID;";
 
         $stmt = $conn->prepare($sql_str);
         $stmt->bind_param("s", $current_user_id,);
@@ -219,8 +219,8 @@ class Movie
         logger("doDateSearch: " . $doDateSearch);
 
         $sql_str = "SELECT m.ID as m_ID,  m.TITLE, m.STARTDATE, m.ENDDATE, m.CINEMANAME, m.CATEGORY, f.ID as f_ID 
-                    FROM movies m 
-                        LEFT JOIN favorites f ON f.USERID = ? AND f.MOVIEID = m.ID
+                    FROM Movies m 
+                        LEFT JOIN Favorites f ON f.USERID = ? AND f.MOVIEID = m.ID
                     WHERE m.TITLE LIKE ? AND m.CINEMANAME LIKE ? AND m.CATEGORY LIKE ? AND ( ?=FALSE OR  (DATEDIFF(m.STARTDATE, ?) >= 0 AND  DATEDIFF(?, m.ENDDATE) >= 0));";
         $stmt = $conn->prepare($sql_str);
         $stmt->bind_param("ssssiss", $current_user_id, $title, $cinema_name, $category, $doDateSearch, $date, $date);
@@ -257,7 +257,7 @@ class Movie
     {
         $conn = OpenCon(true);
 
-        $sql_str = "SELECT m.* FROM movies m JOIN cinemas c ON c.OWNER = ? AND c.NAME = m.CINEMANAME";
+        $sql_str = "SELECT m.* FROM Movies m JOIN Cinemas c ON c.OWNER = ? AND c.NAME = m.CINEMANAME";
         $stmt = $conn->prepare($sql_str);
         $stmt->bind_param("s", $user_id);
 

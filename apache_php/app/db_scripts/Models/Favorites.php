@@ -38,7 +38,7 @@ class Favorite
 
         $conn = OpenCon(true);
 
-        $sql_str = "INSERT INTO favorites VALUES(?, ?, ?)";
+        $sql_str = "INSERT INTO Favorites VALUES(?, ?, ?)";
 
         $stmt = $conn->prepare($sql_str);
 
@@ -78,7 +78,7 @@ class Favorite
     {
         $conn = OpenCon(true);
 
-        $sql_str = "SELECT ID FROM favorites WHERE id=?";
+        $sql_str = "SELECT ID FROM Favorites WHERE id=?";
         $stmt = $conn->prepare($sql_str);
         $stmt->bind_param("s",$id);
         $id = $this->id;
@@ -105,7 +105,7 @@ class Favorite
 
         $conn = OpenCon(true);
 
-        $sql_str = "DELETE FROM favorites WHERE id=?";
+        $sql_str = "DELETE FROM Favorites WHERE id=?";
         $stmt = $conn->prepare($sql_str);
         $stmt->bind_param("s",$id);
 
@@ -147,7 +147,7 @@ class Favorite
     {
         $conn = OpenCon(true);
 
-        $sql_str = "SELECT ID FROM favorites WHERE USERID=? AND MOVIEID=?";
+        $sql_str = "SELECT ID FROM Favorites WHERE USERID=? AND MOVIEID=?";
         $stmt = $conn->prepare($sql_str);
         $stmt->bind_param("ss",$user_id, $movie_id);
 

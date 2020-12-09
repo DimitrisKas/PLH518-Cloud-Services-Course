@@ -35,7 +35,7 @@ class Cinema
 
         $conn = OpenCon(true);
 
-        $sql_str = "INSERT INTO cinemas VALUES(?, ?, ?)";
+        $sql_str = "INSERT INTO Cinemas VALUES(?, ?, ?)";
 
         $stmt = $conn->prepare($sql_str);
 
@@ -73,7 +73,7 @@ class Cinema
     {
         $conn = OpenCon(true);
 
-        $sql_str = "SELECT ID FROM cinemas WHERE id=?";
+        $sql_str = "SELECT ID FROM Cinemas WHERE id=?";
         $stmt = $conn->prepare($sql_str);
         $stmt->bind_param("s",$id);
         $id = $this->id;
@@ -91,10 +91,9 @@ class Cinema
     {
         $conn = OpenCon(true);
 
-        $sql_str = "SELECT ID FROM movies WHERE CINEMANAME=?";
+        $sql_str = "SELECT ID FROM Cinemas WHERE ID=?";
         $stmt = $conn->prepare($sql_str);
-        $stmt->bind_param("s",$movie_id);
-        $movie_id = $this->name;
+        $stmt->bind_param("s",$this->id);
 
         if (!$stmt->execute())
             logger("Check for duplicate Cinema failed " . $stmt->error);
@@ -116,7 +115,7 @@ class Cinema
     {
         $conn = OpenCon(true);
 
-        $sql_str = "UPDATE cinemas SET NAME=? WHERE id=?";
+        $sql_str = "UPDATE Cinemas SET NAME=? WHERE ID=?";
         $stmt = $conn->prepare($sql_str);
         $stmt->bind_param("ss", $name, $id);
 
@@ -142,7 +141,7 @@ class Cinema
     {
         $conn = OpenCon(true);
 
-        $sql_str = "DELETE FROM cinemas WHERE id=?";
+        $sql_str = "DELETE FROM Cinemas WHERE ID=?";
         $stmt = $conn->prepare($sql_str);
         $stmt->bind_param("s",$id);
 
@@ -168,7 +167,7 @@ class Cinema
     {
         $conn = OpenCon(true);
 
-        $sql_str = "SELECT * FROM cinemas WHERE OWNER=?";
+        $sql_str = "SELECT * FROM Cinemas WHERE OWNER=?";
         $stmt = $conn->prepare($sql_str);
         $stmt->bind_param("s", $id);
 

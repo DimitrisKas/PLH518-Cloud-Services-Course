@@ -1,10 +1,12 @@
 <?php
-include_once '../../db_scripts/Models/Users.php';
-include_once '../../db_scripts/db_connection.php';
-include_once('../../Utils/Random.php');
-include_once('../../Utils/Logs.php');
-
 session_start();
+header('Content-type: application/json');
+
+include_once '../db_scripts/Models/Users.php';
+include_once '../db_scripts/db_connection.php';
+include_once('../Utils/Random.php');
+include_once('../Utils/Logs.php');
+
 logger("-- In Delete user");
 
 // Check if User is logged in AND is an Admin
@@ -22,7 +24,6 @@ if (isset($_SESSION['login'])
     If (isset($data['user_id']))
     {
         $success_flag = User::DeleteUser($data['user_id']);
-        header('Content-type: application/json');
         echo json_encode($success_flag);
         exit();
     }

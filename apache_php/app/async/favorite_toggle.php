@@ -1,11 +1,12 @@
 <?php
-include_once '../../db_scripts/Models/Users.php';
-include_once '../../db_scripts/Models/Favorites.php';
-include_once '../../db_scripts/db_connection.php';
-include_once('../../Utils/Random.php');
-include_once('../../Utils/Logs.php');
-
 session_start();
+header('Content-type: application/json');
+include_once '../db_scripts/Models/Users.php';
+include_once '../db_scripts/Models/Favorites.php';
+include_once '../db_scripts/db_connection.php';
+include_once('../Utils/Random.php');
+include_once('../Utils/Logs.php');
+
 logger("-- In toggle Favorites");
 
 // Check if User is logged in AND is an Admin
@@ -22,7 +23,6 @@ if (isset($_SESSION['login'])
     {
         logger($data['isFavorite']);
         $success_flag = Favorite::ToggleFavorite($_SESSION['user_id'], $data['movie_id'], $data['isFavorite']);
-        header('Content-type: application/json');
         echo json_encode($success_flag);
         exit();
     }

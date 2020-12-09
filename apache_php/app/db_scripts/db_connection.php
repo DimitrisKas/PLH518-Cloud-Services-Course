@@ -1,9 +1,9 @@
 <?php
 function OpenCon($connect_to_db)
 {
-    $servername = "localhost";
+    $servername = "mysql";
     $username = "root";
-    $password = "1234_proj1_pass";
+    $password = "1234securePass";
     $dbname = "Project1";
     
     if ($connect_to_db)

@@ -1,11 +1,12 @@
 <?php
-include_once '../../db_scripts/Models/Users.php';
-include_once '../../db_scripts/Models/Movies.php';
-include_once '../../db_scripts/db_connection.php';
-include_once('../../Utils/Random.php');
-include_once('../../Utils/Logs.php');
-
 session_start();
+header('Content-type: application/json');
+include_once '../db_scripts/Models/Users.php';
+include_once '../db_scripts/Models/Movies.php';
+include_once '../db_scripts/db_connection.php';
+include_once('../Utils/Random.php');
+include_once('../Utils/Logs.php');
+
 logger("-- In Edit Movie");
 
 // Check if User is logged in AND is an Admin
@@ -27,7 +28,6 @@ if (isset($_SESSION['login'])
             $data['movie_end_date'], $data['movie_cinema_name'], $data['movie_category']
         );
 
-        header('Content-type: application/json');
         echo json_encode($success_flag);
         exit();
     }
