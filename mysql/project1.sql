@@ -20,6 +20,8 @@ SET time_zone = "+00:00";
 --
 -- Database: `project1`
 --
+CREATE DATABASE IF NOT EXISTS Project1;
+USE Project1;
 
 -- --------------------------------------------------------
 
@@ -27,7 +29,7 @@ SET time_zone = "+00:00";
 -- Table structure for table `cinemas`
 --
 
-CREATE TABLE `cinemas` (
+CREATE TABLE `Cinemas` (
   `ID` varchar(10) NOT NULL,
   `OWNER` varchar(20) NOT NULL,
   `NAME` varchar(20) NOT NULL
@@ -37,7 +39,7 @@ CREATE TABLE `cinemas` (
 -- Dumping data for table `cinemas`
 --
 
-INSERT INTO `cinemas` (`ID`, `OWNER`, `NAME`) VALUES
+INSERT INTO `Cinemas` (`ID`, `OWNER`, `NAME`) VALUES
 ('c104885885', 'u958215285', 'Village'),
 ('c633159382', 'u721317857', 'Ellinis'),
 ('c755793336', 'u958215285', 'Ster Cinemas'),
@@ -49,7 +51,7 @@ INSERT INTO `cinemas` (`ID`, `OWNER`, `NAME`) VALUES
 -- Table structure for table `favorites`
 --
 
-CREATE TABLE `favorites` (
+CREATE TABLE `Favorites` (
   `ID` varchar(10) NOT NULL,
   `USERID` varchar(10) NOT NULL,
   `MOVIEID` varchar(10) NOT NULL
@@ -59,7 +61,7 @@ CREATE TABLE `favorites` (
 -- Dumping data for table `favorites`
 --
 
-INSERT INTO `favorites` (`ID`, `USERID`, `MOVIEID`) VALUES
+INSERT INTO `Favorites` (`ID`, `USERID`, `MOVIEID`) VALUES
 ('f609630709', 'u902651969', 'm683408917');
 
 -- --------------------------------------------------------
@@ -68,7 +70,7 @@ INSERT INTO `favorites` (`ID`, `USERID`, `MOVIEID`) VALUES
 -- Table structure for table `movies`
 --
 
-CREATE TABLE `movies` (
+CREATE TABLE `Movies` (
   `ID` varchar(10) NOT NULL,
   `TITLE` varchar(50) NOT NULL,
   `STARTDATE` date DEFAULT NULL,
@@ -81,7 +83,7 @@ CREATE TABLE `movies` (
 -- Dumping data for table `movies`
 --
 
-INSERT INTO `movies` (`ID`, `TITLE`, `STARTDATE`, `ENDDATE`, `CINEMANAME`, `CATEGORY`) VALUES
+INSERT INTO `Movies` (`ID`, `TITLE`, `STARTDATE`, `ENDDATE`, `CINEMANAME`, `CATEGORY`) VALUES
 ('m258735884', 'The Godfather', '2020-11-30', '2020-12-07', 'Odeon', 'Drama'),
 ('m319840796', 'Fight Club', '2020-11-30', '2020-12-05', 'Ster Cinemas', 'Action'),
 ('m339893498', 'The Godfather 2', '2020-12-07', '2020-12-14', 'Odeon', 'Drama'),
@@ -96,7 +98,7 @@ INSERT INTO `movies` (`ID`, `TITLE`, `STARTDATE`, `ENDDATE`, `CINEMANAME`, `CATE
 -- Table structure for table `users`
 --
 
-CREATE TABLE `users` (
+CREATE TABLE `Users` (
   `ID` varchar(10) NOT NULL,
   `NAME` varchar(20) DEFAULT NULL,
   `SURNAME` varchar(20) DEFAULT NULL,
@@ -111,7 +113,7 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`ID`, `NAME`, `SURNAME`, `USERNAME`, `PASSWORD`, `EMAIL`, `ROLE`, `CONFIRMED`) VALUES
+INSERT INTO `Users` (`ID`, `NAME`, `SURNAME`, `USERNAME`, `PASSWORD`, `EMAIL`, `ROLE`, `CONFIRMED`) VALUES
 ('u052010974', 'Dimitris', 'Kastrinakis', 'dkastrinakis', '1234', 'dk@email.com', 'ADMIN', 1),
 ('u691867084', 'Bob', 'Bobby', 'user2', '1234', 'dk@email2.com', 'USER', 1),
 ('u721317857', 'user5Name', 'Surname', 'user8', '1234', 'user5@hotmail.com', 'CINEMAOWNER', 1),
@@ -126,13 +128,13 @@ INSERT INTO `users` (`ID`, `NAME`, `SURNAME`, `USERNAME`, `PASSWORD`, `EMAIL`, `
 --
 -- Indexes for table `cinemas`
 --
-ALTER TABLE `cinemas`
+ALTER TABLE `Cinemas`
   ADD PRIMARY KEY (`ID`);
 
 --
 -- Indexes for table `favorites`
 --
-ALTER TABLE `favorites`
+ALTER TABLE `Favorites`
   ADD PRIMARY KEY (`ID`),
   ADD KEY `favorites_ibfk_1` (`USERID`),
   ADD KEY `favorites_ibfk_2` (`MOVIEID`);
@@ -140,13 +142,13 @@ ALTER TABLE `favorites`
 --
 -- Indexes for table `movies`
 --
-ALTER TABLE `movies`
+ALTER TABLE `Movies`
   ADD PRIMARY KEY (`ID`);
 
 --
 -- Indexes for table `users`
 --
-ALTER TABLE `users`
+ALTER TABLE `Users`
   ADD PRIMARY KEY (`ID`),
   ADD UNIQUE KEY `USERNAME` (`USERNAME`),
   ADD UNIQUE KEY `EMAIL` (`EMAIL`);
@@ -158,9 +160,9 @@ ALTER TABLE `users`
 --
 -- Constraints for table `favorites`
 --
-ALTER TABLE `favorites`
-  ADD CONSTRAINT `favorites_ibfk_1` FOREIGN KEY (`USERID`) REFERENCES `users` (`ID`) ON DELETE CASCADE,
-  ADD CONSTRAINT `favorites_ibfk_2` FOREIGN KEY (`MOVIEID`) REFERENCES `movies` (`ID`) ON DELETE CASCADE;
+ALTER TABLE `Favorites`
+  ADD CONSTRAINT `favorites_ibfk_1` FOREIGN KEY (`USERID`) REFERENCES `Users` (`ID`) ON DELETE CASCADE,
+  ADD CONSTRAINT `favorites_ibfk_2` FOREIGN KEY (`MOVIEID`) REFERENCES `Movies` (`ID`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
