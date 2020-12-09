@@ -25,11 +25,11 @@ if (isset($_SESSION['login'])
     {
         $cinema = new Cinema($_SESSION['user_id'] , $data['cinema_name']);
         if ($cinema->addToDB())
-            $success_flag = true;
+            $ret = json_encode($cinema);
         else
-            $success_flag = false;
+            $ret = json_encode(false);
 
-        echo json_encode($success_flag);
+        echo  $ret;
         exit();
     }
 }
