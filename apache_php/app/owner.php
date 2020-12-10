@@ -80,7 +80,7 @@ else
         <h4>Manage Your Cinemas</h4>
         <hr/>
 
-        <div class="table-container">
+        <div id="cinemas-container" class="table-container">
             <table id="cinemas-table">
                 <tr>
                     <th>ID</th>
@@ -133,7 +133,7 @@ else
         <?php if (count($cinemas) > 0)
         {
         ?>
-            <div class="table-container">
+            <div id="movies-container" class="table-container">
                 <table id="movies-table">
                     <tr>
                         <th>ID</th>
@@ -222,7 +222,19 @@ else
 </div>
 </body>
 <script type="text/javascript">
-    let totalCinemas = <?php echo sizeof($cinemas) ?>;
+    function getCinemas()
+    {
+        fetch('async/cinema_get.php', {
+            method: 'POST',
+        })
+        .then( response => {
+            response.text()
+                .then( text => {
+                    let container = document.getElementById("cinemas-container");
+                    container.innerHTML = text;
+                });
+        });
+    }
 
     function addCinema()
     {
@@ -238,58 +250,7 @@ else
             })
             .then( data => {
                 if (data !== false) {
-                    // Add new row with new Cinema data
-                    let table = document.getElementById("cinemas-table");
-                    let newRow = table.insertRow(++totalCinemas);
-
-                    let input0 = document.createElement('input');
-                    input0.type="text";
-                    input0.id = data['id'] +'_id';
-                    input0.value = data['id'];
-                    input0.classList.add("disabled-input");
-                    input0.disabled = true;
-
-                    newRow.insertCell().appendChild(document.createElement('div').appendChild(input0));
-
-                    let input1 = document.createElement('input');
-                    input1.type="text";
-                    input1.id = data['id'] +'_name';
-                    input1.value = data['name'];
-                    input1.classList.add("custom-input");
-
-                    newRow.insertCell().appendChild(document.createElement('div').appendChild(input1));
-
-                    let input2 = document.createElement('input');
-                    input2.type="text";
-                    input2.id = data['id'] +'_owner';
-                    input2.value = data['owner'] + "<?php echo " (".$_SESSION['user_username'].")" ?>";
-                    input2.classList.add("disabled-input");
-                    input2.disabled = true;
-
-                    newRow.insertCell().appendChild(document.createElement('div').appendChild(input2));
-
-                    let saveButton = document.createElement('button');
-                    saveButton.id = data['id'] +'_submit';
-                    saveButton.classList.add("btn-primary");
-                    saveButton.classList.add("btn-success");
-                    saveButton.onclick = function() { submitCinema(data['id']); }
-                    saveButton.innerText = "Save";
-
-                    let tdSave = newRow.insertCell()
-                    tdSave.class = "action-td";
-                    tdSave.appendChild(document.createElement('div').appendChild(saveButton));
-
-                    let delButton = document.createElement('button');
-                    delButton.id = data['id'] +'_delete';
-                    delButton.classList.add("btn-primary");
-                    delButton.classList.add("btn-danger");
-                    delButton.onclick = function() { deleteCinema(data['id']); }
-                    delButton.innerText = "Delete";
-
-                    let tdDelete = newRow.insertCell()
-                    tdDelete.class = "action-td";
-                    tdDelete.appendChild(document.createElement('div').appendChild(delButton));
-
+                    getCinemas();
                 }
             });
     }
@@ -309,7 +270,7 @@ else
             })
             .then( data =>{
                 if (data !== false) {
-                    console.log(data)
+                    getCinemas();
                 }
             });
     }
@@ -326,8 +287,22 @@ else
             })
             .then( data =>{
                 if (data !== false) {
-                    console.log(data)
+                    getCinemas();
                 }
+            });
+    }
+
+    function getMovies()
+    {
+        fetch('async/movie_owner_get.php', {
+            method: 'POST',
+        })
+            .then( response => {
+                response.text()
+                    .then( text => {
+                        let container = document.getElementById("movies-container");
+                        container.innerHTML = text;
+                    });
             });
     }
 
@@ -370,7 +345,7 @@ else
             })
             .then( success =>{
                 if (success) {
-                    location.reload();
+                    getMovies();
                 }
             });
     }
@@ -394,7 +369,7 @@ else
             })
             .then( success =>{
                 if (success) {
-                    location.reload();
+                    getMovies();
                 }
             });
     }
@@ -411,7 +386,7 @@ else
             })
             .then( success =>{
                 if (success) {
-                    location.reload();
+                    getMovies();
                 }
             });
     }

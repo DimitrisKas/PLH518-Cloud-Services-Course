@@ -78,7 +78,7 @@ else
             <h4>Manage Users</h4>
             <hr/>
 
-            <div class="table-container">
+            <div id="admin-table-container" class="table-container">
                 <table id="admin-table">
                     <tr>
                         <th>ID</th>
@@ -143,6 +143,20 @@ else
     let textarea = document.getElementById('temp-logs');
     textarea.scrollTop = textarea.scrollHeight;
 
+    function getUsers()
+    {
+         fetch('async/users_get.php', {
+            method: 'POST',
+        })
+            .then( response => {
+                response.text()
+                    .then( text => {
+                        let container = document.getElementById("admin-table-container");
+                        container.innerHTML = text;
+                    });
+            });
+    }
+
     function submitUser(uid)
     {
         this.event.stopPropagation();
@@ -165,7 +179,7 @@ else
             })
             .then( success =>{
                 if (success) {
-                    location.reload();
+                    getUsers();
                 }
             });
 
@@ -184,7 +198,7 @@ else
             })
             .then( success =>{
               if (success) {
-                  location.reload();
+                  getUsers();
               }
             });
     }

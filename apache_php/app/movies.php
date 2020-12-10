@@ -78,51 +78,53 @@ else
         <h4>Manage Users</h4>
         <hr/>
 
-        <div class="table-container">
-            <table id="admin-table">
-                <tr>
-                    <th>Favorite</th>
-                    <th>Title</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                    <th>Cinema Name</th>
-                    <th>Category</th>
-                </tr>
-
-                <?php
-                if (isset($_GET['search']))
-                {
-                    $movies = Movie::Search($_SESSION['user_id'], $_GET['title'], $_GET['date'], $_GET['cin_name'], $_GET['cat']);
-                }
-                else
-                {
-                    $movies = Movie::GetAllMovies($_SESSION['user_id']);
-                }
-                /* @var $movie Movie (IDE type hint) */
-                foreach ($movies as $movie)
-                {
-                    ?>
-                    <tr id="movie_<?php echo $movie->id?>">
-                        <td><div><input id="<?php echo $movie->id?>_favorite"   type="checkbox" <?php echo $movie->favorite ? "checked" : ""?> onclick="toggleFavorite('<?php echo $movie->id?>', this)"/></div></td>
-                        <td class="td-movie-title"><div><span id="<?php echo $movie->id?>_title"       ><?php echo $movie->title?></span></div></td>
-                        <td><div><span id="<?php echo $movie->id?>_start_date"  ><?php echo $movie->start_date?></span></div></td>
-                        <td><div><span id="<?php echo $movie->id?>_end_date"    ><?php echo $movie->end_date?></span></div></td>
-                        <td><div><span id="<?php echo $movie->id?>_cinema_name" ><?php echo $movie->cinema_name?></span></div></td>
-                        <td><div><span id="<?php echo $movie->id?>_category"    ><?php echo $movie->category?></span></div></td>
+        <div  class="table-container">
+            <div id="movies-container">
+                <table id="movies-table">
+                    <tr>
+                        <th>Favorite</th>
+                        <th>Title</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Cinema Name</th>
+                        <th>Category</th>
                     </tr>
+
                     <?php
-                }
-                ?>
-            </table>
+                    if (isset($_GET['search']))
+                    {
+                        $movies = Movie::Search($_SESSION['user_id'], $_GET['title'], $_GET['date'], $_GET['cin_name'], $_GET['cat']);
+                    }
+                    else
+                    {
+                        $movies = Movie::GetAllMovies($_SESSION['user_id']);
+                    }
+                    /* @var $movie Movie (IDE type hint) */
+                    foreach ($movies as $movie)
+                    {
+                        ?>
+                        <tr id="movie_<?php echo $movie->id?>">
+                            <td><div><input id="<?php echo $movie->id?>_favorite"   type="checkbox" <?php echo $movie->favorite ? "checked" : ""?> onclick="toggleFavorite('<?php echo $movie->id?>', this)"/></div></td>
+                            <td class="td-movie-title"><div><span id="<?php echo $movie->id?>_title"       ><?php echo $movie->title?></span></div></td>
+                            <td><div><span id="<?php echo $movie->id?>_start_date"  ><?php echo $movie->start_date?></span></div></td>
+                            <td><div><span id="<?php echo $movie->id?>_end_date"    ><?php echo $movie->end_date?></span></div></td>
+                            <td><div><span id="<?php echo $movie->id?>_cinema_name" ><?php echo $movie->cinema_name?></span></div></td>
+                            <td><div><span id="<?php echo $movie->id?>_category"    ><?php echo $movie->category?></span></div></td>
+                        </tr>
+                        <?php
+                    }
+                    ?>
+                </table>
+            </div>
             <div class="search-cont title-row fl-col">
                 <h5>Search: </h5>
-                <form method="GET" action="./movies.php">
-                    <input name="search" class="custom-input" type="hidden"  value="1" placeholder="Title"/>
-                    <input name="title" class="custom-input" type="text"  value="" placeholder="Title"/>
-                    <input name="date" class="custom-input" type="date"  value="" placeholder="Date"/>
-                    <input name="cin_name" class="custom-input" type="text"  value="" placeholder="Cinema Name"/>
-                    <input name="cat" class="custom-input" type="text"  value="" placeholder="Category"/>
-                    <input class="btn-primary" type="submit" value="Search"/>
+                <form method="GET" action="./movies.php" >
+                    <input name="search" class="custom-input" type="hidden"  value="1"/>
+                    <input id="search-title" name="title" class="custom-input" type="text"  value="" placeholder="Title" oninput="getMovies(true)"/>
+                    <input id="search-date" name="date" class="custom-input" type="date"  value="" placeholder="Date" oninput="getMovies(true)"/>
+                    <input id="search-cin_name" name="cin_name" class="custom-input" type="text"  value="" placeholder="Cinema Name" oninput="getMovies(true)"/>
+                    <input id="search-cat" name="cat" class="custom-input" type="text"  value="" placeholder="Category" oninput="getMovies(true)"/>
+                    <input class="btn-primary" type="submit" value="Search" onclick="getMovies(true)"/>
                 </form>
             </div>
         </div>
@@ -132,6 +134,34 @@ else
 </div>
 </body>
 <script type="text/javascript">
+    function getMovies(isSearching)
+    {
+        console.log("Searching...");
+        let data = {}
+        if(isSearching)
+        {
+            this.event.stopPropagation();
+            data = {
+                search: true,
+                title: document.getElementById("search-title").value,
+                date: document.getElementById("search-date").value,
+                cin_name: document.getElementById("search-cin_name").value,
+                cat: document.getElementById("search-cat").value,
+            }
+        }
+        fetch('async/movie_user_get.php', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        })
+            .then( response => {
+                response.text()
+                    .then( text => {
+                        let container = document.getElementById("movies-container");
+                        container.innerHTML = text;
+                    });
+            });
+    }
+
     function toggleFavorite(movie_id, checkbox)
     {
         fetch('async/favorite_toggle.php', {
@@ -147,7 +177,7 @@ else
             })
             .then( success =>{
                 if (success) {
-                    location.reload();
+                    getMovies(false);
                 }
             });
     }
