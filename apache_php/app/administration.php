@@ -129,12 +129,20 @@ else
                     ?>
                 </table>
             </div>
+            <h4>Server Logs</h4>
+            <hr/>
+            <textarea id="temp-logs" style="width: 100%; height: 800px; font-size: large; background: #222; color: #f0f0f0"><?php echo getLogs() ?></textarea>
 
         </div>
 
     </div>
 </body>
 <script type="text/javascript">
+
+    // Scroll logs to bottom
+    let textarea = document.getElementById('temp-logs');
+    textarea.scrollTop = textarea.scrollHeight;
+
     function submitUser(uid)
     {
         this.event.stopPropagation();
