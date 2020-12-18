@@ -27,9 +27,17 @@ services:
       proj2-net:
     environment:
       MYSQL_ROOT_PASSWORD: 1234securePass
-  
-  # mongo:
-  #   image: "mongo"
+
+  # MySQL db management
+  adminer:
+      image: adminer
+      restart: always
+      ports:
+        - 8080:8080
+      networks:
+        proj2-net:
+
+
   db-service:
       build:
         context: './database_service'
@@ -38,6 +46,33 @@ services:
         - ./database_service/app/:/var/www/html/
       ports:
         - 9003:80
+
+  mongo:
+     image: mongo
+#     build:
+#       context: './mongo'
+#       dockerfile: mongo_dockerfile
+     ports:
+       - 27017:27017
+     volumes:
+       - ./mongo/db:/data/db
+     networks:
+       proj2-net:
+     environment:
+       MONGO_INITDB_ROOT_USERNAME: root
+       MONGO_INITDB_ROOT_PASSWORD: example
+
+  mongo-express:
+     image: mongo-express
+     depends_on:
+       - mongo
+     ports:
+       - 8082:8082
+     networks:
+        proj2-net:
+     environment:
+       ME_CONFIG_MONGODB_ADMINUSERNAME: root
+       ME_CONFIG_MONGODB_ADMINPASSWORD: example
 
   # keyrock: // Keyrock IDM
   #   image: "fiware/idm"
