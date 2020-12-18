@@ -1,0 +1,6 @@
+
+mongo/db/
+
+database_service/app/vendor/
+
+database_service/app/composer.*

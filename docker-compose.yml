@@ -5,9 +5,9 @@ services:
     # image: "httpd:2.4"
     build:
       context: './apache_php'
-      dockerfile: apache_php_dockerfile
+    restart: always
     ports: 
-      - '80:80'
+      - 80:80
     volumes:
         # - ./apache_php/httpd.conf:/usr/local/apache2/conf/httpd.conf
         - ./apache_php/app/:/var/www/html/
@@ -18,11 +18,11 @@ services:
     # image: "mysql"
     build:
       context: './mysql'
-      dockerfile: myslq_dockerfile
+    restart: always
     volumes:
        - mysql-storage:/var/lib/mysql
     ports: 
-      - '3306:3306'
+      - 3306:3306
     networks:
       proj2-net:
     environment:
@@ -30,6 +30,14 @@ services:
   
   # mongo:
   #   image: "mongo"
+  db-service:
+      build:
+        context: './database_service'
+      volumes:
+        - ./database_service/httpd.conf:/usr/local/apache2/conf/httpd.conf
+        - ./database_service/app/:/var/www/html/
+      ports:
+        - 9003:80
 
   # keyrock: // Keyrock IDM
   #   image: "fiware/idm"
