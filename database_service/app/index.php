@@ -3,6 +3,7 @@ include_once ("Models/GenericModels.php");
 include_once ("Models/iRestObject.php");
 include_once ("Models/Mongo/Users.php");
 include_once ("Models/Mongo/db_mongo.php");
+include_once ("Utils/Logs.php");
 
 use Psr\Log\LoggerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -23,6 +24,7 @@ $app->get('/users', function (Request $request, Response $response, $args) {
     $response->getBody()->write("Hello world!");
     return $response;
 });
+
 
 // POST /users
 // - Add user to database
@@ -46,6 +48,18 @@ $app->get('/users/{id}', function (Request $request, Response $response, $args) 
     return $response;
 });
 
+// GET /users/search/{username}
+// - Search for user with given username (usernames are unique)
+$app->get('/users/search/{username}', function (Request $request, Response $response, $args) {
+    logger("Searching user");
+    $user = User::searchByUsername($args['username']);
+
+    $response->getBody()->write($user->username . "\n");
+    $response->getBody()->write($user->password . "\n");
+    $response->getBody()->write($user->role . "\n");
+    return $response;
+});
+
 // PUT /users/{id}
 // - Edit user
 $app->put('/users/{id}', function (Request $request, Response $response, $args) {
@@ -61,8 +75,6 @@ $app->delete('/users/{id}', function (Request $request, Response $response, $arg
     $response->getBody()->write("Hello world!");
     return $response;
 });
-
-
 
 // GET /logs
 $app->get('/logs', function (Request $request, Response $response, $args) {

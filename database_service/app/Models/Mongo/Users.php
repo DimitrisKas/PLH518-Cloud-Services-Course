@@ -40,22 +40,35 @@ class UserM extends User implements iRestObject {
         return true;
     }
 
-    public static function searchByUsername(string $username): User
+    public static function searchByUsername(string $username): User|false
     {
         $db = connect();
         $coll = $db->selectCollection("Users");
-        $cursor = $coll->find(['username' => $username]);
+        $user_doc = $coll->findOne(['username' => $username]);
 
+        if ($user_doc == null )
+        {
+            logger("Couldn't find user with username: " . $username);
+            return false;
+        }
 
+        logger("User found!");
+        return new User($user_doc);
     }
 
-    public static function getOne(string $id): User
+    public static function getOne(string $id): User|false
     {
         $db = connect();
         $coll = $db->selectCollection("Users");
         $user_doc = $coll->findOne([
             '_id' => new ObjectId('594d5ef280a846852a4b3f70')
         ]);
+
+        if ($user_doc == null )
+        {
+            logger("Couldn't find user with id: " . $id);
+            return false;
+        }
 
         return new User($user_doc);
     }
