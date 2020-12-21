@@ -1,16 +1,15 @@
 version: "3.8"
 services:
-  
-  apache-php:
-    # image: "httpd:2.4"
+
+  main-app:
     build:
-      context: './apache_php'
+      context: './main_app'
     restart: always
     ports: 
       - 80:80
     volumes:
-        # - ./apache_php/httpd.conf:/usr/local/apache2/conf/httpd.conf
-        - ./apache_php/app/:/var/www/html/
+        # - ./main_app/httpd.conf:/usr/local/apache2/conf/httpd.conf
+        - ./main_app/app/:/var/www/html/
     networks:
       proj2-net:
   
