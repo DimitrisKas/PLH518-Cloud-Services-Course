@@ -66,6 +66,13 @@ $app->delete('/users/{id}', function (Request $request, Response $response, $arg
 
 
 
+// GET /logs
+$app->get('/logs', function (Request $request, Response $response, $args) {
+    $response->getBody()->write(getLogs());
+    return $response;
+});
+
+
 
 
 /* ----- Error Handling ----- */
