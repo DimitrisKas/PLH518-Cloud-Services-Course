@@ -3,4 +3,6 @@ mongo/db/
 
 database_service/app/vendor/
 
-database_service/app/composer.*
+database_service/composer.*
+
+database_service/vendor/

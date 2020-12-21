@@ -15,7 +15,6 @@ services:
       proj2-net:
   
   mysql:
-    # image: "mysql"
     build:
       context: './mysql'
     restart: always
@@ -44,35 +43,35 @@ services:
       volumes:
         - ./database_service/httpd.conf:/usr/local/apache2/conf/httpd.conf
         - ./database_service/app/:/var/www/html/
+      networks:
+        proj2-net:
       ports:
         - 9003:80
 
   mongo:
-     image: mongo
-#     build:
-#       context: './mongo'
-#       dockerfile: mongo_dockerfile
+     build:
+       context: './mongo'
      ports:
        - 27017:27017
      volumes:
-       - ./mongo/db:/data/db
+       - mongo-storage:/data/db
      networks:
        proj2-net:
      environment:
        MONGO_INITDB_ROOT_USERNAME: root
-       MONGO_INITDB_ROOT_PASSWORD: example
+       MONGO_INITDB_ROOT_PASSWORD: 1234securePass
 
   mongo-express:
      image: mongo-express
      depends_on:
        - mongo
      ports:
-       - 8082:8082
+       - 8081:8081
      networks:
         proj2-net:
      environment:
        ME_CONFIG_MONGODB_ADMINUSERNAME: root
-       ME_CONFIG_MONGODB_ADMINPASSWORD: example
+       ME_CONFIG_MONGODB_ADMINPASSWORD: 1234securePass
 
   # keyrock: // Keyrock IDM
   #   image: "fiware/idm"
@@ -89,6 +88,7 @@ services:
   
 volumes:
   mysql-storage:
+  mongo-storage:
 
 networks:
   proj2-net:
