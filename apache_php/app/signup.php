@@ -27,11 +27,7 @@ if (!empty($_POST))
         logger("No password provided");
         $f_msg[$error_Count++] = "You need to provide a Password";
     }
-    if (empty($_POST['email']))
-    {
-        logger("No email provided");
-        $f_msg[$error_Count++] = "You need to provide an E-mail";
-    }
+
     if (empty($_POST['role']))
     {
         logger("No role selected");

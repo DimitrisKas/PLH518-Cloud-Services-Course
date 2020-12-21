@@ -5,7 +5,6 @@ class Movie
     public string $id;
     public string $title;
 
-    // TODO: mktime(hour, minute, second, month, day, year)
     public string $start_date;
     public string $end_date;
     public string $cinema_name;

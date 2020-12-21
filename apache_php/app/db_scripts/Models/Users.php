@@ -20,7 +20,6 @@ class User
 
     public function __construct($name, $surname, $username, $password, $email, $role, $confirmed)
     {
-        $this->generateID();
         $this->name = $name;
         $this->surname = $surname;
         $this->username = $username;
@@ -33,11 +32,6 @@ class User
 
     public function addToDB():bool
     {
-        if (empty($this->id))
-        {
-            logger("[USER_DB] ID was empty.");
-            return false;
-        }
         if (empty($this->username))
         {
             logger("[USER_DB] Username was empty.");
@@ -48,44 +42,65 @@ class User
             logger("[USER_DB] Password was empty.");
             return false;
         }
-        if (empty($this->email))
+
+        $ch = curl_init();
+        $url = "http://db-service/users";
+        $fields = [
+            'username'  => $this->username,
+            'name'   => $this->name,
+            'surname'   => $this->surname,
+            'password'   => $this->password,
+            'email'   => $this->email,
+            'role'   => $this->role,
+            'confirmed'   => FALSE,
+        ];
+
+        $fields_string = http_build_query($fields);
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_POST, true);
+        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+
+//            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+//                'Content-Type: application/x-www-form-urlencoded',
+//            ));
+
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+
+        // Execute post
+        logger("Sending Request...");
+        $result = curl_exec($ch);
+
+        logger($fields_string);
+
+        if (!$result)
         {
-            logger("[USER_DB] E-mail was empty.");
-            return false;
-        }
-
-        $conn = OpenCon(true);
-
-        $sql_str = "INSERT INTO Users VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
-
-        $stmt = $conn->prepare($sql_str);
-
-        if (!$stmt->bind_param("sssssssi", $id,$name,$surname,$username,$password,$email,$role,$confirmed))
-            logger("[USER_DB] Binding error while Adding User.");
-
-        $id = $this->id;
-        $name = $this->name;
-        $surname = $this->surname;
-        $username = $this->username;
-        $password = $this->password;
-        $email = $this->email;
-        $role = $this->role;
-        $confirmed = $this->confirmed;
-
-        if (!$stmt->execute())
-        {
-            logger("[USER_DB] Add user failed: " . $stmt->error);
-            $stmt->close();
-            CloseCon($conn);
+            logger("Unsuccesful call to API.");
+            logger("Error: ". curl_error($ch));
             return false;
         }
         else
         {
-            logger("[USER_DB] Added user successfully.");
-            $stmt->close();
-            CloseCon($conn);
-            return true;
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            if ($http_code == 203)
+            {
+                logger("User succesfully created!");
+                return true;
+            }
+            else if ($http_code >= 400)
+            {
+                logger("User was not created.");
+            }
+
+            logger("Raw result: ". $result);
+            $res = json_decode($result, true);
+            $data = $res['response']['data'][0];
+            logger("Data:" . var_export($data, true));
+
+
         }
+        curl_close($ch);
+
+        return false;
     }
 
     private function generateID()
