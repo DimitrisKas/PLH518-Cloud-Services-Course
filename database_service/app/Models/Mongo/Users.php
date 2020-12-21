@@ -4,6 +4,7 @@ namespace Models\Mongo;
 
 use RestAPI\iRestObject;
 use Models\Generic\User;
+use MongoDB\BSON\ObjectId;
 
 /**
  * Class User
@@ -39,9 +40,24 @@ class UserM extends User implements iRestObject {
         return true;
     }
 
+    public static function searchByUsername(string $username): User
+    {
+        $db = connect();
+        $coll = $db->selectCollection("Users");
+        $cursor = $coll->find(['username' => $username]);
+
+
+    }
+
     public static function getOne(string $id): User
     {
+        $db = connect();
+        $coll = $db->selectCollection("Users");
+        $user_doc = $coll->findOne([
+            '_id' => new ObjectId('594d5ef280a846852a4b3f70')
+        ]);
 
+        return new User($user_doc);
     }
 
     public static function updateOne(string $id): bool

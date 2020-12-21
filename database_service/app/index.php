@@ -33,11 +33,9 @@ $app->post('/users', function (Request $request, Response $response, $args) {
 
     $success = User::addOne(new User($params));
     if ($success)
-        $response->withStatus(203);
+        return $response->withStatus(203);
     else
-        $response->withStatus(400);
-
-    return $response;
+        return $response->withStatus(400);
 });
 
 // GET /users/{id}

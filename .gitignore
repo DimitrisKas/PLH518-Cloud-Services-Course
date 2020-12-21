@@ -6,3 +6,5 @@ database_service/app/vendor/
 database_service/composer.*
 
 database_service/vendor/
+
+database_service/app/Utils/Logs/

@@ -55,49 +55,56 @@ class User
             'confirmed'   => FALSE,
         ];
 
+
         $fields_string = http_build_query($fields);
+        logger("Fields String: " . $fields_string);
+
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_POST, true);
         curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
 
 //            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
 //                'Content-Type: application/x-www-form-urlencoded',
 //            ));
 
-        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
 
         // Execute post
         logger("Sending Request...");
         $result = curl_exec($ch);
 
-        logger($fields_string);
 
-        if (!$result)
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+
+        if ($http_code == 203 || $http_code == 200)
         {
-            logger("Unsuccesful call to API.");
-            logger("Error: ". curl_error($ch));
-            return false;
+            logger("User succesfully created!");
+            curl_close($ch);
+            return true;
         }
-        else
+        else if ($http_code >= 400)
         {
-            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            if ($http_code == 203)
-            {
-                logger("User succesfully created!");
-                return true;
-            }
-            else if ($http_code >= 400)
-            {
-                logger("User was not created.");
-            }
-
-            logger("Raw result: ". $result);
-            $res = json_decode($result, true);
-            $data = $res['response']['data'][0];
-            logger("Data:" . var_export($data, true));
-
-
+            logger("User was not created.");
         }
+        else if (curl_errno($ch) == 6)
+        {
+            logger("Could not connect to db-service.");
+        }
+        else if (curl_errno($ch) != 0 )
+        {
+            logger("An error occured with cURL.");
+            logger("Error: ". curl_error($ch) . " .. errcode: " . curl_errno($ch));
+        }
+
+
+        // Debugging
+//        logger("Raw result: ". $result);
+//        $res = json_decode($result, true);
+//        $data = $res['response']['data'][0];
+//        logger("Data:" . var_export($data, true));
+
         curl_close($ch);
 
         return false;
