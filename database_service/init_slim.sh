@@ -1,6 +1,6 @@
 
 # Git installation -- Slim requirement
-apt-get -y update; apt-get -y install git install -y libcurl4-openssl-dev pkg-config libssl-dev
+apt-get -y update; apt-get -y install git libcurl4-openssl-dev pkg-config libssl-dev
 
 # Move to work directory OR exit on fail
 cd /var/www/ || exit
