@@ -35,7 +35,6 @@ services:
       networks:
         proj2-net:
 
-
   db-service:
       build:
         context: './database_service'
