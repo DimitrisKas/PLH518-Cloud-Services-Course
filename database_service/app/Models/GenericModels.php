@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * Project specific Models, database agnostic
+ */
 namespace Models\Generic;
 
 

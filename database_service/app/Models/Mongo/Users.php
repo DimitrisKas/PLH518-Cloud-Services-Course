@@ -2,6 +2,7 @@
 
 namespace Models\Mongo;
 
+use RestAPI\Result;
 use RestAPI\iRestObject;
 use Models\Generic\User;
 use MongoDB\BSON\ObjectId;
@@ -17,29 +18,41 @@ class UserM extends User implements iRestObject {
         parent::__construct($obj);
     }
 
-    /**
+    /** Adds user to database if username is unique
      * @param $obj User
-     * @return bool TRUE on success, FALSE otherwise
+     * @return Result Result object with success boolean and a message
      */
-    public static function addOne($obj): bool
+    public static function addOne($obj): Result
     {
         if (empty($obj->username))
-        {
-            logger("[USER_DB] Username was empty.");
-            return false;
-        }
-        if (empty($obj->password))
-        {
-            logger("[USER_DB] Password was empty.");
-            return false;
-        }
+            return Result::withLogMsg("Username was empty.", false);
 
+        if (empty($obj->password))
+            return Result::withLogMsg("Password was empty.", false);
+
+        // If username already exists
+        if (self::searchByUsername($obj->username) != false)
+            return Result::withLogMsg("Username already exists", false);
+
+
+        // Create New User
         $db = connect();
         $coll = $db->selectCollection("Users");
-        $coll->insertOne($obj);
-        return true;
+        $insertResult = $coll->insertOne($obj);
+
+        if ($insertResult->getInsertedCount() != 1)
+        {
+            return Result::withLogMsg("Couldn't insert user with username: " . $obj->username, false);
+        }
+
+        return new Result(null, true);
     }
 
+    /**
+     * Search for a single user based on username
+     * @param string $username Username to base search on
+     * @return User|false Returns user object if found, false othewise
+     */
     public static function searchByUsername(string $username): User|false
     {
         $db = connect();
@@ -56,6 +69,11 @@ class UserM extends User implements iRestObject {
         return new User($user_doc);
     }
 
+    /**
+     * Get a single user based on given id
+     * @param string $id
+     * @return User|false Returns user object on succes, false othewise
+     */
     public static function getOne(string $id): User|false
     {
         $db = connect();
@@ -73,14 +91,65 @@ class UserM extends User implements iRestObject {
         return new User($user_doc);
     }
 
-    public static function updateOne(string $id): bool
+    /**
+     * Update a single user based on User object given
+     * @param string $id
+     * @param User $obj
+     * @return Result Result object with success boolean and a message
+     */
+    public static function updateOne(string $id, $obj): Result
     {
+        if (empty($id))
+            return new Result("Empty id", false);
 
+        $db = connect();
+        $coll = $db->selectCollection("Users");
+        $updateResult = $coll->updateOne(
+            ['_id' => new ObjectId('594d5ef280a846852a4b3f70')],
+            ['$set'=> [
+                'username' => $obj->username,
+                'name' => $obj->name,
+                'surname' => $obj->surname,
+                'password' => $obj->password,
+                'email' => $obj->email,
+                'role' => $obj->role,
+            ]]
+        );
+
+        if ($updateResult->getMatchedCount() != 1)
+            return Result::withLogMsg("Couldn't find user with id: " . $id, false);
+
+        else if ($updateResult->getModifiedCount() != 1)
+            return Result::withLogMsg("Couldn't edit user with id: " . $id, false);
+
+        else
+            return new Result(null, true);
     }
 
-
-    public static function deleteOne(string $id): bool
+    /**
+     * Delete a single user with given id
+     * @param string $id
+     * @return Result Result object with success boolean and a message
+     */
+    public static function deleteOne(string $id): Result
     {
+        if (empty($id))
+            return new Result("Empty id", false);
+
+        $db = connect();
+        $coll = $db->selectCollection("Users");
+        $deleteResult = $coll->deleteOne([
+            '_id' => new ObjectId('594d5ef280a846852a4b3f70')
+        ]);
+
+        if ($deleteResult->getDeletedCount() != 1)
+        {
+            $msg = "Couldn't find user with id: " . $id;
+            logger($msg);
+            return new Result($msg, false);
+        }
+        else
+            return new Result(null, true);
 
     }
 

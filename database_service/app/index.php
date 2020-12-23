@@ -33,10 +33,11 @@ $app->post('/users', function (Request $request, Response $response, $args) {
     // Get all POST parameters
     $params = (array)$request->getParsedBody();
 
-    $success = User::addOne(new User($params));
-    if ($success)
+    $result = User::addOne(new User($params));
+    if ($result->success)
         return $response->withStatus(203);
     else
+        $response->getBody()->write($result->msg);
         return $response->withStatus(400);
 });
 
