@@ -278,38 +278,59 @@ class User
 
     public static function GetAllUsers():array
     {
-        $conn = OpenCon(true);
+        logger("Getting all users");
+        $ch = curl_init();
+        $url = "http://db-service/users";
 
-        $sql_str = "SELECT * FROM Users";
-        $stmt = $conn->prepare($sql_str);
 
-        if (!$stmt->execute())
-            logger("[USER_DB] Get users failed " . $stmt->error);
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
 
-        $result = $stmt->get_result();
+        // Execute post
+        logger("Sending Request...");
+        $result = curl_exec($ch);
 
-        $num_of_rows = $result->num_rows;
-        logger("[USER_DB] Found " . $num_of_rows . " users.");
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
 
-        $ret_array = array();
-        while ($row = $result->fetch_assoc()) {
+        // In case of error
+        $errno = curl_errno($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
 
-            // Create object and append to return array
-            $user = User::CreateExistingUserObj(
-                $row['ID'], $row['NAME'], $row['SURNAME'], $row['USERNAME'],
-                $row['PASSWORD'], $row['EMAIL'], $row['ROLE'] ,$row['CONFIRMED']);
-            $ret_array[] = $user;
 
-            $msg = 'ID: '.$row['ID'] . ', Username: '. $row['USERNAME'] . ', Role: '. $row['ROLE'];
-            logger('[USER_DB] '.$msg);
+        // Parse results
+        if ($http_code == 200)
+        {
+            logger("Retrieved all users");
+            logger($result);
+            $result = json_decode($result, true);
+
+            $users = array();
+            $i =0;
+            foreach ($result as $user_doc)
+            {
+                $users[$i++] =  User::fromDocumentWithID($user_doc);
+            }
+            return $users;
         }
-
-        $stmt->free_result();
-        $stmt->close();
-
-        CloseCon($conn);
-
-        return $ret_array;
+        else if ($http_code >= 400)
+        {
+            logger("Users could not be retrieved");
+            return array(false, array(), $result);
+        }
+        else if ($errno == 6)
+        {
+            logger("Could not connect to db-service.");
+            return array(false, array(), "Internal error");
+        }
+        else if ($errno != 0 )
+        {
+            logger("An error occured with cURL.");
+            logger("Error: ". $err . " .. errcode: " . $errno);
+            return array(false, array(), "Internal error");
+        }
     }
 
     /** Tries to login a user based on given Username and Password.
