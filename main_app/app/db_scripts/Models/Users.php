@@ -29,6 +29,22 @@ class User
         $this->confirmed = $confirmed;
     }
 
+    public static function fromDocument($doc): User
+    {
+        return new User(
+                $doc['name'], $doc['surname'], $doc['username'], $doc['password'],
+                $doc['email'], $doc['role'], $doc['confirmed']
+        );
+    }
+
+    public static function fromDocumentWithID($doc): User
+    {
+        return self::CreateExistingUserObj(
+            $doc['id'], $doc['name'], $doc['surname'], $doc['username'], $doc['password'],
+            $doc['email'], $doc['role'], $doc['confirmed']
+        );
+    }
+
 
     public function addToDB():bool
     {
@@ -153,7 +169,7 @@ class User
     }
 
     // static functions
-    public static function CreateExistingUserObj($id, $name, $surname, $username, $password, $email, $role, $confirmed):User
+    #[Pure] public static function CreateExistingUserObj($id, $name, $surname, $username, $password, $email, $role, $confirmed):User
     {
         $user = new User($name, $surname, $username, $password, $email, $role, $confirmed);
         $user->id = $id;
@@ -301,76 +317,63 @@ class User
      * On Failure, returns NULL user model, along with reason of failure.
      * @param $username string
      * @param $password string
-     * @return array($successBool, $user, $errorMsg)
+     * @return array(bool $success, User $user, string $errorMsg)
      */
-    public static function LoginUser(string $username, string $password)
+    public static function LoginUser(string $username, string $password): array
     {
-        // TODO: Add confirmated user check
-        $conn = OpenCon(true);
 
-        $sql_str = "SELECT * FROM Users WHERE USERNAME=? AND PASSWORD=?";
-        $stmt = $conn->prepare($sql_str); 
-        $stmt->bind_param("ss",$_username, $_password);
-        $_username = $username;
-        $_password = $password;
+        $ch = curl_init();
+        $url = "http://db-service/login";
+        $fields = [
+            'username'  => $username,
+            'password'   => $password,
+        ];
 
-        if (!$stmt->execute())
-            logger("[USER_DB] Login User statment bind failed: " . $stmt->error);
+        $fields_string = http_build_query($fields);
+        logger("Fields String: " . $fields_string);
 
-        $result = $stmt->get_result();
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_POST, true);
+        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
 
-        $num_of_rows = $result->num_rows;
-        logger("[USER_DB] Found " . $num_of_rows . " users.");
+        // Execute post
+        logger("Sending Request...");
+        $result = curl_exec($ch);
 
-        // If USERNAME - PASSWORD pair is found
-        if ($num_of_rows === 1)
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+
+        // In case of error
+        $errno = curl_errno($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+
+        // Parse results
+        if ($http_code == 200)
         {
-            $row = $result->fetch_assoc();
-
-            if($row['CONFIRMED'] === 0)
-                $return_arr = array(false, null, "You are not yet confirmed.");
-            else
-            {
-                $user = User::CreateExistingUserObj(
-                        $row['ID'], $row['NAME'], $row['SURNAME'], $row['USERNAME'],
-                        $row['PASSWORD'], $row['EMAIL'], $row['ROLE'] ,$row['CONFIRMED']);
-                $return_arr = array(true, $user, "");
-            }
+            logger("User succesfully logged in!");
+            $user = User::fromDocumentWithID(json_decode($result, true));
+            return array(true, $user, "");
         }
-        else
+        else if ($http_code >= 400)
         {
-            $sql_str = "SELECT * FROM Users WHERE USERNAME=?";
-            $stmt = $conn->prepare($sql_str); $stmt = $conn->prepare($sql_str);
-            $stmt->bind_param("s",$_username);
-            $_username = $username;
-
-            if (!$stmt->execute())
-                logger("[USER_DB] Login User statment bind failed: " . $stmt->error);
-
-            $result = $stmt->get_result();
-
-            $num_of_rows = $result->num_rows;
-            logger("[USER_DB] Found " . $num_of_rows . " users.");
-
-            if ($num_of_rows === 1)
-            {
-                logger("[USER_DB] Couldn't authenticate user: ". $username);
-                $return_arr = array(false, null, "Wrong password");
-            }
-            else
-            {
-                logger("[USER_DB] Couldn't find user: ". $username);
-                $return_arr = array(false, null, "Couldn't find User");
-            }
+            logger("User was not created.");
+            return array(false, null, $result);
         }
-
-        // Cleanup
-        $stmt->free_result();
-        $stmt->close();
-        CloseCon($conn);
-
-        return $return_arr;
-
+        else if ($errno == 6)
+        {
+            logger("Could not connect to db-service.");
+            return array(false, null, "Internal error");
+        }
+        else if ($errno != 0 )
+        {
+            logger("An error occured with cURL.");
+            logger("Error: ". $err . " .. errcode: " . $errno);
+            return array(false, null, "Internal error");
+        }
     }
 
 }

@@ -8,46 +8,10 @@ include_once('db_scripts/create_tables.php');
 include_once('Utils/Random.php');
 include_once('Utils/Logs.php');
 
-function initDB()
-{
-    dropDB();
-    createDB();
-    createTables();
 
-    $user = new User(
-            "Dimitris",
-            "Kastrinakis",
-            "dkastrinakis",
-            "1234",
-            "dk@email.com",
-            User::ADMIN,
-            true
-    );
-    if (!$user->addToDB())
-    {
-        logger("Error adding user.");
-    }
-    $user = new User(
-        "Bob",
-        "Bobby",
-        "user2",
-        "1234",
-        "dk@email2.com",
-        User::ADMIN,
-        true
-    );
-
-
-    if (!$user->addToDB())
-    {
-        logger("Error adding user.");
-    }
-
-    User::GetAllUsers();
-}
-
-//initDB();
 logger("-- In index: ");
+
+// Initialize variables
 $f_title = "";
 $f_text  = "";
 $isSigningUp = false;
