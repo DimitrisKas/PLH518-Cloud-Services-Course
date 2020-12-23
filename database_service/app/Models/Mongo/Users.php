@@ -14,8 +14,8 @@ use MongoDB\BSON\ObjectId;
  */
 class UserM extends User implements iRestObject {
 
-    public function __construct($obj) {
-        parent::__construct($obj);
+    public function __construct($doc) {
+        parent::__construct($doc);
     }
 
     /** Adds user to database if username is unique
@@ -31,7 +31,7 @@ class UserM extends User implements iRestObject {
             return Result::withLogMsg("Password was empty.", false);
 
         // If username already exists
-        if (self::searchByUsername($obj->username) != false)
+        if (self::searchByUsername($obj->username) == true)
             return Result::withLogMsg("Username already exists", false);
 
 
@@ -45,7 +45,7 @@ class UserM extends User implements iRestObject {
             return Result::withLogMsg("Couldn't insert user with username: " . $obj->username, false);
         }
 
-        return new Result(null, true);
+        return Result::withLogMsg("User ".$obj->username." successfully  created", true);
     }
 
     /**
@@ -123,7 +123,7 @@ class UserM extends User implements iRestObject {
             return Result::withLogMsg("Couldn't edit user with id: " . $id, false);
 
         else
-            return new Result(null, true);
+            return new Result("", true);
     }
 
     /**
@@ -149,12 +149,49 @@ class UserM extends User implements iRestObject {
             return new Result($msg, false);
         }
         else
-            return new Result(null, true);
+            return new Result("", true);
 
     }
 
+    /**
+     * Get all users
+     * @return array An array with all users as User objects
+     */
     public static function getAll(): array
     {
+        $db = connect();
+        $cursor = $db->selectCollection("Users")->find();
 
+        $users = array();
+        $i = 0;
+        foreach($cursor as $user_doc)
+        {
+            $users[$i] = new User($user_doc);
+            $i++;
+        }
+
+        return $users;
+    }
+
+    /**
+     * Login a user based on given username and password
+     * @param string $username
+     * @param string $password
+     * @return User|Result User object on success, Result object on failure with error msg
+     */
+    public static function Login(string $username, string $password): User|Result {
+        $db = connect();
+        $coll = $db->selectCollection("Users");
+        $user_doc = $coll->findOne([
+            'username' => $username,
+            'password' => $password
+        ]);
+
+        if ($user_doc == null )
+            return Result::withLogMsg("Wrong credentials for user " . $username, false);
+
+        logger("Successfully logged in user: " . $username);
+        logger("User id: ", $user_doc['_id']->__toSTring());
+        return new User($user_doc);
     }
 }

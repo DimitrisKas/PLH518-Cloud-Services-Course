@@ -10,6 +10,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use Models\Mongo\UserM as User;
+use RestAPI\Result;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -18,10 +19,29 @@ $app->addBodyParsingMiddleware();
 
 /* ----- API endpoints ----- */
 
+$app->post('/login', function (Request $request, Response $response, $args) {
+    // Get all POST parameters
+    $params = (array)$request->getParsedBody();
+    $result = User::Login($params['username'], $params['password']);
+
+    if ($result instanceof Result)
+    {
+        logger("Couldn't login user");
+        $response->getBody()->write($result->msg);
+        return $response->withStatus(401);
+    }
+    else
+        $response->getBody()->write(json_encode($result));
+
+    return $response;
+});
+
 // GET /users
 // - Retrieve all users' info
 $app->get('/users', function (Request $request, Response $response, $args) {
-    $response->getBody()->write("Hello world!");
+    $users = User::getAll();
+
+    $response->getBody()->write(json_encode($users));
     return $response;
 });
 
