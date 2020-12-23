@@ -21,15 +21,18 @@ class User
     const CINEMAOWNER = "CINEMAOWNER";
     const USER = "USER";
 
-    const ID_PREFIX = "u";
-
-    public function __construct($obj) {
-        $this->username = $obj['username'];
-        $this->password = $obj['password'];
-        $this->name = $obj['name'];
-        $this->surname = $obj['surname'];
-        $this->email = $obj['email'];
-        $this->role = $obj['role'];
+    /** Create User object from document with user data
+     * @param $doc array Document array with data
+     */
+    public function __construct($doc) {
+        $this->id = $doc['_id']->__toSTring();
+        $this->username = $doc['username'];
+        $this->password = $doc['password'];
+        $this->name = $doc['name'];
+        $this->surname = $doc['surname'];
+        $this->email = $doc['email'];
+        $this->role = $doc['role'];
+        $this->confirmed = false;
     }
 }
 
