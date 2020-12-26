@@ -46,3 +46,8 @@ tr:hover .custom-input {
     padding-left: 0;
     padding-right: 0;
 }
+
+#admin_content  .id-field {
+    width: 14em;
+    font-family: Consolas, serif;
+}

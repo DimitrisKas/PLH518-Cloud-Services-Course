@@ -74,6 +74,9 @@ else
     <?php // ---- Navigation Panel - END ----?>
 
     <div class="main-content" id="admin_content">
+        <div id="popup-box-cont" class="f-success" hidden>
+            <p id="popup-box-text" ></p>
+        </div>
         <div class="card">
             <h4>Manage Users</h4>
             <hr/>
@@ -101,7 +104,7 @@ else
                     {
                         ?>
                             <tr id="user_<?php echo $user->id?>" onclick="toggleHighlight(this)">
-                                <td><div><input id="<?php echo $user->id?>_id"        type="text"  value="<?php echo $user->id?>"       class="disabled-input" disabled/></div></td>
+                                <td><div><input id="<?php echo $user->id?>_id"        type="text"  value="<?php echo $user->id?>"       class="disabled-input id-field" disabled/></div></td>
                                 <td><div><input id="<?php echo $user->id?>_username"  type="text"  value="<?php echo $user->username?>" class="custom-input"/></div></td>
                                 <td><div><input id="<?php echo $user->id?>_name"      type="text"  value="<?php echo $user->name?>"     class="custom-input"/></div></td>
                                 <td><div><input id="<?php echo $user->id?>_surname"   type="text"  value="<?php echo $user->surname?>"  class="custom-input"/></div></td>
@@ -132,7 +135,8 @@ else
             <h4>Server Logs</h4>
             <hr/>
             <textarea id="temp-logs" style="width: 100%; height: 800px; font-size: large; background: #222; color: #f0f0f0"><?php echo getLogs() ?></textarea>
-            <label for="temp-db-service" class="text-color-dark">DB Service Logs</label>
+            <h4>DB Service Logs</h4>
+            <hr/>
             <textarea id="temp-db-service" style="white-space: pre-wrap;width: 100%; height: 800px; font-size: large; background: #222; color: #f0f0f0"></textarea>
             <button id="refresh-db-btn" class="btn-primary" style="padding: 10px" onclick="updateDBServiceLogs()">Refresh</button>
         </div>
@@ -145,6 +149,8 @@ else
     let textarea = document.getElementById('temp-logs');
     textarea.scrollTop = textarea.scrollHeight;
     updateDBServiceLogs();
+
+    document.getElementById("popup-box-cont").hidden = false;
 
     function getUsers()
     {
@@ -181,9 +187,8 @@ else
                 return response.json();
             })
             .then( success =>{
-                if (success) {
-                    getUsers();
-                }
+                showModal(success);
+                getUsers();
             });
 
     }
@@ -200,9 +205,8 @@ else
                 return response.json();
             })
             .then( success =>{
-              if (success) {
-                  getUsers();
-              }
+                showModal(success);
+                getUsers();
             });
     }
 
@@ -224,6 +228,31 @@ else
                 textarea.scrollTop = textarea.scrollHeight;
                 textarea.innerHTML = text;
             })
+    }
+
+    function showModal(isSuccessful)
+    {
+        let text_obj = document.getElementById("popup-box-text");
+        let cont_obj = document.getElementById("popup-box-cont");
+        // document.getElementById("popup-box-cont").classList.remove("popup-hidden");
+
+        document.getElementById("popup-box-cont").classList.add("popup-show");
+
+        if (isSuccessful)
+        {
+            text_obj.innerText = "Success!";
+            cont_obj.classList.remove("f-warning");
+            cont_obj.classList.add("f-success");
+        }
+        else
+        {
+            text_obj.innerText = "An error occured!";
+            cont_obj.classList.remove("f-success");
+            cont_obj.classList.add("f-error");
+
+        }
+
+        setTimeout(function () { document.getElementById("popup-box-cont").classList.remove("popup-show");}, 102500);
     }
 
 </script>

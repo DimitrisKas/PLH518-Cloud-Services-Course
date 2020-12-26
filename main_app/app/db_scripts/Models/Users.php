@@ -80,10 +80,6 @@ class User
         curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
 
-//            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-//                'Content-Type: application/x-www-form-urlencoded',
-//            ));
-
 
         // Execute post
         logger("Sending Request...");
@@ -169,7 +165,7 @@ class User
     }
 
     // static functions
-    #[Pure] public static function CreateExistingUserObj($id, $name, $surname, $username, $password, $email, $role, $confirmed):User
+    public static function CreateExistingUserObj($id, $name, $surname, $username, $password, $email, $role, $confirmed):User
     {
         $user = new User($name, $surname, $username, $password, $email, $role, $confirmed);
         $user->id = $id;
@@ -205,18 +201,13 @@ class User
         return  $success;
     }
 
-    public static function EditUser($data):bool
+    public static function EditUser($data): bool
     {
-        logger("[USER_DB] Trying to edit user with id: " . $data['user_id']);
+        logger("Trying to edit user with id: " . $data['user_id']);
 
-        $conn = OpenCon(true);
-
+        // Check if Role is set
         if ($data['user_role'] !== USER::ADMIN && $data['user_role'] !== USER::CINEMAOWNER && $data['user_role'] !== USER::USER)
             return false;
-
-        $sql_str = "UPDATE Users SET USERNAME=? , NAME=?, SURNAME=?, EMAIL=?, ROLE=?, CONFIRMED=? WHERE id=?";
-        $stmt = $conn->prepare($sql_str);
-        $stmt->bind_param("sssssis",$username, $name, $surname, $email, $role, $confirmed, $id);
 
         // Validate IsConfirmed:
         if ( !empty($data['user_confirmed']) && $data['user_confirmed'] === "true")
@@ -226,54 +217,62 @@ class User
 
 
         $username = $data['user_username'];
+        $password= $data['user_password'];
         $name = $data['user_name'];
         $surname = $data['user_surname'];
         $email = $data['user_email'];
         $role = $data['user_role'];
-        $confirmed = $isConfirmed;
         $id = $data['user_id'];
 
-        if (!$stmt->execute())
-        {
-            logger("[USER_DB] Edit User failed " . $stmt->error);
-            $success = false;
-        }
-        else
-        {
-            logger("[USER_DB] Edited user successfully!");
-            $success = true;
-        }
-        $stmt->close();
+        $ch = curl_init();
+        $url = "http://db-service/users/" . $id;
+        $fields = [
+            'username'  => $username,
+            'password'   => $password,
+            'name'   => $name,
+            'surname'   => $surname,
+            'email'   => $email,
+            'role'   => $role,
+            'confirmed'   => $isConfirmed,
+        ];
 
-        // Check if user wants to change password
-        $success_pass = true;
-        if ( !empty($data['user_password']) )
-        {
-            $sql_str = "UPDATE Users SET PASSWORD=? WHERE id=?";
-            $stmt = $conn->prepare($sql_str);
-            $stmt->bind_param("ss",$password, $id);
+        $fields_string = http_build_query($fields);
+        logger("Fields String: " . $fields_string);
 
-            $password = $data['user_password'];
-            $id = $data['user_id'];
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
 
-            if (!$stmt->execute())
-            {
-                logger("[USER_DB] Password change failed: " . $stmt->error);
-                $success_pass = false;
-            }
-            else
-            {
-                logger("[USER_DB] Changed User Password successfully!");
-                $success_pass = true;
-            }
-            $stmt->close();
-        }
+        // Execute post
+        logger("Sending Request...");
+        $result = curl_exec($ch);
 
-        // Clean up
-        CloseCon($conn);
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
 
-        // If everything was successful
-        return  $success && $success_pass;
+        // In case of error
+        $errno = curl_errno($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        // Parse results
+        if ($http_code == 204)
+            return true;
+
+        else if ($http_code >= 400)
+            logger("User could not be edited.");
+
+        else if ($errno == 6)
+            logger("Could not connect to db-service.");
+
+        else if ($errno != 0 )
+            logger("An error occured with cURL. \n
+                Error: ". $err . " .. errcode: " . $errno);
+
+        return false;
+
     }
 
     public static function GetAllUsers():array
@@ -304,7 +303,6 @@ class User
         if ($http_code == 200)
         {
             logger("Retrieved all users");
-            logger($result);
             $result = json_decode($result, true);
 
             $users = array();

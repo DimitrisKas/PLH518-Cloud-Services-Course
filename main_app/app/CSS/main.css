@@ -187,6 +187,12 @@ select {
     border-color: #f5c6cb;
 }
 
+.f-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
 .f-info {
     color: #0c5460;
     background-color: #d1ecf1;
@@ -335,4 +341,31 @@ table select{
     border-top: rgba(50,50,50, 0.2) dashed 2px;
     padding-top: 0.5em;
     margin-bottom: 0.5em;
+}
+
+
+#popup-box-cont {
+    position:fixed;
+    opacity: 0;
+
+    bottom: 10%;
+    right: 50%;
+    transform: translate(50%, 50%);
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 4px;
+
+    box-shadow: #0000001f 0 0 14px 7px;
+
+    transition: opacity ease-in 0.2s;
+}
+
+#popup-box-text {
+    user-select: none;
+    margin: 0.4em 1.1em;
+    padding: 0.3em;
+}
+
+#popup-box-cont.popup-show {
+    opacity: 1;
 }
