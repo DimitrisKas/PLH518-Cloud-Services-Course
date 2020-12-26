@@ -25,14 +25,20 @@ class User
      * @param $doc array Document array with data
      */
     public function __construct($doc) {
-        $this->id = $doc['_id']->__toSTring();
+        if ( !empty($doc['_id']) )
+            $this->id = $doc['_id']->__toString();
+
         $this->username = $doc['username'];
         $this->password = $doc['password'];
         $this->name = $doc['name'];
         $this->surname = $doc['surname'];
         $this->email = $doc['email'];
         $this->role = $doc['role'];
-        $this->confirmed = false;
+
+        if ( !empty($doc['confirmed']))
+            $this->confirmed = $doc['confirmed'] == '1';
+        else
+            $this->confirmed = false;
     }
 }
 
