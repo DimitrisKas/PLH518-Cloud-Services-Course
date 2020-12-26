@@ -78,9 +78,7 @@ class UserM extends User implements iRestObject {
     {
         $db = connect();
         $coll = $db->selectCollection("Users");
-        $user_doc = $coll->findOne([
-            '_id' => new ObjectId('594d5ef280a846852a4b3f70')
-        ]);
+        $user_doc = $coll->findOne(['_id' => new ObjectId($id)]);
 
         if ($user_doc == null )
         {
@@ -105,7 +103,7 @@ class UserM extends User implements iRestObject {
         $db = connect();
         $coll = $db->selectCollection("Users");
         $updateResult = $coll->updateOne(
-            ['_id' => new ObjectId('594d5ef280a846852a4b3f70')],
+            ['_id' => new ObjectId($id)],
             ['$set'=> [
                 'username' => $obj->username,
                 'name' => $obj->name,
@@ -139,7 +137,7 @@ class UserM extends User implements iRestObject {
         $db = connect();
         $coll = $db->selectCollection("Users");
         $deleteResult = $coll->deleteOne([
-            '_id' => new ObjectId('594d5ef280a846852a4b3f70')
+            '_id' => new ObjectId($id)
         ]);
 
         if ($deleteResult->getDeletedCount() != 1)
