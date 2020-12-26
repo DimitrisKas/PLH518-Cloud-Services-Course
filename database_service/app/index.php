@@ -85,17 +85,33 @@ $app->get('/users/search/{username}', function (Request $request, Response $resp
 // - Edit user
 $app->put('/users/{id}', function (Request $request, Response $response, $args) {
 
-    $response->getBody()->write("Hello world!");
-    return $response;
+    logger("\n --- At [PUT] /users/{id} - (Edit User)");
+    // Get all parameters
+    $params = (array)$request->getParsedBody();
+    $res = User::updateOne($args['id'], new User($params));
+
+    if ($res->success == false)
+        return $response->withStatus(401);
+
+    return $response->withStatus(204);
 });
 
 // DELETE /users/{id}
 // - Delete user
 $app->delete('/users/{id}', function (Request $request, Response $response, $args) {
 
-    $response->getBody()->write("Hello world!");
-    return $response;
+    logger("\n --- At [DELETE] /users/{id} - (Delete User)");
+    $res = User::deleteOne($args['id']);
+
+    if ($res->success == false)
+        return $response->withStatus(401);
+
+    return $response->withStatus(204);
 });
+
+
+
+
 
 // GET /logs
 $app->get('/logs', function (Request $request, Response $response, $args) {

@@ -97,8 +97,14 @@ class UserM extends User implements iRestObject {
      */
     public static function updateOne(string $id, $obj): Result
     {
+        $resultMain = new Result("", true);
+        $resultPass = new Result("", true);
+
+        logger("Editing user...");
         if (empty($id))
             return new Result("Empty id", false);
+
+        logger("With id: ". $id);
 
         $db = connect();
         $coll = $db->selectCollection("Users");
@@ -108,20 +114,55 @@ class UserM extends User implements iRestObject {
                 'username' => $obj->username,
                 'name' => $obj->name,
                 'surname' => $obj->surname,
-                'password' => $obj->password,
                 'email' => $obj->email,
                 'role' => $obj->role,
+                'confirmed' => $obj->confirmed
             ]]
         );
 
-        if ($updateResult->getMatchedCount() != 1)
-            return Result::withLogMsg("Couldn't find user with id: " . $id, false);
+        logger("User to edit: ". var_export($obj, true));
 
-        else if ($updateResult->getModifiedCount() != 1)
-            return Result::withLogMsg("Couldn't edit user with id: " . $id, false);
+        if ($updateResult->isAcknowledged())
+        {
+            logger("Matched Count: " . $updateResult->getMatchedCount());
+            logger("Modified Count: " . $updateResult->getModifiedCount());
+            if ($updateResult->getMatchedCount() != 1)
+                $resultMain = Result::withLogMsg("Couldn't find user with id: " . $id, false);
 
-        else
-            return new Result("", true);
+            else if ($updateResult->getModifiedCount() != 1)
+                $resultMain =  Result::withLogMsg("Nothing to edit or couldn't edit user with id: " . $id, false);
+        }
+
+        if (!empty($obj->password)) {
+            logger("Changing password...");
+            $updateResult = $coll->updateOne(
+                ['_id' => new ObjectId($id)],
+                ['$set' => [
+                    'password' => $obj->password
+                ]]
+            );
+
+            if ($updateResult->isAcknowledged())
+            {
+                if ($updateResult->getMatchedCount() != 1)
+                    $resultPass = Result::withLogMsg("Couldn't find user with id: " . $id, false);
+
+                else if ($updateResult->getModifiedCount() != 1)
+                    $resultPass = Result::withLogMsg("Couldn't edit password for user with id: " . $id, false);
+            }
+        }
+
+        if ( !$resultMain->success && !$resultPass->success)
+        {
+            // Concat Messages for the part that failed
+            $mainMsg = !$resultMain->success ? $resultMain->msg : "";
+            $passMsg = !$resultPass->success ? $resultPass->msg : "";
+
+            return new Result($mainMsg . $passMsg, false);
+        }
+
+        return new Result("Success Editing User", true);
+
     }
 
     /**
