@@ -174,31 +174,43 @@ class User
 
     public static function DeleteUser(string $id):bool
     {
-        logger("[USER_DB] Trying to delete user with id: " . $id);
-        $success = false;
+        logger("Trying to delete user with id: " . $id);
 
-        $conn = OpenCon(true);
+        $ch = curl_init();
+        $url = "http://db-service/users/" . $id;
 
-        $sql_str = "DELETE FROM Users WHERE id=?";
-        $stmt = $conn->prepare($sql_str);
-        $stmt->bind_param("s",$id);
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "DELETE");
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
 
-        if (!$stmt->execute())
-        {
-            logger("[USER_DB] Remove User failed " . $stmt->error);
-            $success = false;
-        }
-        else
-        {
-            logger("[USER_DB] Removed user successfully!");
-            $success = true;
-        }
+        // Execute post
+        logger("Sending Request... at ". $url);
+        $result = curl_exec($ch);
 
-        // Clean up
-        $stmt->close();
-        CloseCon($conn);
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
 
-        return  $success;
+        // In case of error
+        $errno = curl_errno($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        // Parse results
+        if ($http_code == 204)
+            return true;
+
+        else if ($http_code >= 400)
+            logger("User could not be deleted.");
+
+        else if ($errno == 6)
+            logger("Could not connect to db-service.");
+
+        else if ($errno != 0 )
+            logger("An error occured with cURL. \n
+                Error: ". $err . " .. errcode: " . $errno);
+
+        return false;
     }
 
     public static function EditUser($data): bool

@@ -183,12 +183,10 @@ class UserM extends User implements iRestObject {
 
         if ($deleteResult->getDeletedCount() != 1)
         {
-            $msg = "Couldn't find user with id: " . $id;
-            logger($msg);
-            return new Result($msg, false);
+            return Result::withLogMsg("Couldn't find user with id: " . $id, false);
         }
         else
-            return new Result("", true);
+            return Result::withLogMsg("" . $id, true);
 
     }
 

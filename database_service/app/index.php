@@ -21,6 +21,8 @@ $app->addBodyParsingMiddleware();
 
 $app->post('/login', function (Request $request, Response $response, $args) {
     // Get all POST parameters
+
+    logger("\n --- At [POST] /login");
     $params = (array)$request->getParsedBody();
     $result = User::Login($params['username'], $params['password']);
 
@@ -39,6 +41,8 @@ $app->post('/login', function (Request $request, Response $response, $args) {
 // GET /users
 // - Retrieve all users' info
 $app->get('/users', function (Request $request, Response $response, $args) {
+
+    logger("\n --- At [GET] /users");
     $users = User::getAll();
 
     $response->getBody()->write(json_encode($users));
@@ -50,11 +54,12 @@ $app->get('/users', function (Request $request, Response $response, $args) {
 // - Add user to database
 $app->post('/users', function (Request $request, Response $response, $args) {
 
+    logger("\n --- At [POST] /users - (Add User)");
     // Get all POST parameters
     $params = (array)$request->getParsedBody();
 
     $result = User::addOne(new User($params));
-    if ($result->success)
+    if ($result instanceof Result)
         return $response->withStatus(203);
     else
         $response->getBody()->write($result->msg);
@@ -65,14 +70,17 @@ $app->post('/users', function (Request $request, Response $response, $args) {
 // - Retrieve SINGLE user's info
 $app->get('/users/{id}', function (Request $request, Response $response, $args) {
 
-    $response->getBody()->write("Hello world!");
+    logger("\n --- At [GET] /users/{id}");
+    // Get all POST parameters
+
     return $response;
 });
 
 // GET /users/search/{username}
 // - Search for user with given username (usernames are unique)
 $app->get('/users/search/{username}', function (Request $request, Response $response, $args) {
-    logger("Searching user");
+
+    logger("\n --- At [GET] /users/search/{username} (Search User)");
     $user = User::searchByUsername($args['username']);
 
     $response->getBody()->write($user->username . "\n");
