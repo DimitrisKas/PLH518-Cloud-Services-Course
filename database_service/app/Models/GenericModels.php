@@ -42,7 +42,7 @@ class User
     }
 }
 
-class Movies
+class Movie
 {
     public string $id;
     public string $title;
@@ -53,23 +53,36 @@ class Movies
     public string $category;
     public bool $favorite = false;
 
-    const ID_PREFIX = "m";
 }
 
-class Favorites
+class Favorite
 {
     public string $id;
     public string $user_id;
     public string $movie_id;
 
-    const ID_PREFIX = "f";
 }
 
-class Cinemas
+class Cinema
 {
     public string $id;
     public string $owner;
     public string $name;
 
-    const ID_PREFIX = "c";
+
+    /** Create Cinema object from document with cinema data
+     * @param $doc array Document array with data
+     * @param $owner string optional owner id string
+     */
+    public function __construct($doc, $owner = null) {
+        if ( !empty($doc['_id']) )
+            $this->id = $doc['_id']->__toString();
+
+        if ($owner == null)
+            $this->owner = $doc['owner'];
+        else
+            $this->owner = $owner;
+
+        $this->name = $doc['name'];
+    }
 }
