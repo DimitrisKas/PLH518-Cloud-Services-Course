@@ -51,3 +51,12 @@ tr:hover .custom-input {
     width: 14em;
     font-family: Consolas, serif;
 }
+
+#admin_content .feedback-box {
+    margin:0 3em;
+    width: 60%;
+}
+
+#admin_content .feedback-title {
+    font-weight: bolder;
+}

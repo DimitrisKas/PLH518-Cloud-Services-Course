@@ -18,25 +18,36 @@ if (isset($_SESSION['login'])
     logger("User: " . $_SESSION['user_username']);
     logger("Role: " . $_SESSION['user_role']);
 
-    ?>
-    <table id="admin-table">
-        <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Name</th>
-            <th>Surname</th>
-            <th>Password</th>
-            <th>E-mail</th>
-            <th>Role</th>
-            <th>Confirmed</th>
-            <th></th>
-            <th></th>
-        </tr>
+    list($isSuccessful, $users, $errmsg)= User::GetAllUsers();
+
+    /* @var $user User (IDE type hint) */
+    if ($isSuccessful == false)
+    {
+        ?>
+        <div>
+            <h5>Error retrieving Users:</h5>
+            <p><?php echo $errmsg?></p>
+        </div>
+        <?php
+    }
+    else
+    {
+        ?>
+        <table id="admin-table">
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Name</th>
+                <th>Surname</th>
+                <th>Password</th>
+                <th>E-mail</th>
+                <th>Role</th>
+                <th>Confirmed</th>
+                <th></th>
+                <th></th>
+            </tr>
 
         <?php
-
-        $users = User::GetAllUsers();
-        /* @var $user User (IDE type hint) */
         foreach ($users as $user)
         {
             ?>
@@ -65,10 +76,13 @@ if (isset($_SESSION['login'])
                 </td>
             </tr>
             <?php
-        }
-        ?>
-    </table>
-    <?php
+
+        } // For loop
+
+        echo "</table>";
+
+    } // If Users Retrieved
+
     exit(1);
 }
 

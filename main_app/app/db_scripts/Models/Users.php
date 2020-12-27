@@ -323,7 +323,7 @@ class User
             {
                 $users[$i++] =  User::fromDocumentWithID($user_doc);
             }
-            return $users;
+            return array(true, $users, "");
         }
         else if ($http_code >= 400)
         {
@@ -333,13 +333,13 @@ class User
         else if ($errno == 6)
         {
             logger("Could not connect to db-service.");
-            return array(false, array(), "Internal error");
+            return array(false, array(), "Could not connect to Database Service");
         }
         else if ($errno != 0 )
         {
             logger("An error occured with cURL.");
             logger("Error: ". $err . " .. errcode: " . $errno);
-            return array(false, array(), "Internal error");
+            return array(false, array(), "Internal Error: " . $err);
         }
     }
 
