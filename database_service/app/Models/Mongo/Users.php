@@ -227,6 +227,10 @@ class UserM extends User implements iRestObject {
         if ($user_doc == null )
             return Result::withLogMsg("Wrong credentials for user " . $username, false);
 
+        // Check if confirmed
+        if ($user_doc['confirmed'] == false)
+            return Result::withLogMsg("User not confirmed!", false);
+
         logger("Successfully logged in user: " . $username);
         logger("User id: ", $user_doc['_id']->__toSTring());
         return new User($user_doc);
