@@ -23,7 +23,7 @@ if (isset($_SESSION['login'])
 
     If (isset($data['cinema_id']))
     {
-        $success_flag = Cinema::DeleteCinema($data['cinema_id']);
+        $success_flag = Cinema::DeleteCinema($data['cinema_id'], $_SESSION['user_id']);
         echo json_encode($success_flag);
         exit();
     }

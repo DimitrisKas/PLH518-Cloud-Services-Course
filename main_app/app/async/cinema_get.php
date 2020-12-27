@@ -9,7 +9,7 @@ include_once('../Utils/Logs.php');
 
 logger("-- In Get Cinema");
 
-// Check if User is logged in AND is an Admin
+// Check if User is logged in AND is an CinemaOwner
 if (isset($_SESSION['login'])
     && $_SESSION['login'] === true
     && isset($_SESSION['user_role'])
@@ -37,9 +37,9 @@ if (isset($_SESSION['login'])
                 {
                     ?>
                     <tr id="cinema_<?php echo $cinema->id?>">
-                        <td><div><input id="<?php echo $cinema->id?>_id"      type="text"  value="<?php echo $cinema->id?>"     class="disabled-input" disabled/></div></td>
+                        <td><div><input id="<?php echo $cinema->id?>_id"      type="text"  value="<?php echo $cinema->id?>"     class="disabled-input id-field" disabled/></div></td>
                         <td><div><input id="<?php echo $cinema->id?>_name"    type="text"  value="<?php echo $cinema->name?>"   class="custom-input"/></div></td>
-                        <td><div><input id="<?php echo $cinema->id?>_owner"   type="text"  value="<?php echo $cinema->owner." (".$_SESSION['user_username'].")" ?>"  class="disabled-input" disabled/></div></td>
+                        <td><div><input id="<?php echo $cinema->id?>_owner"   type="text"  value="<?php echo $cinema->owner." (".$_SESSION['user_username'].")" ?>"  class="disabled-input owner-field" disabled/></div></td>
                         <td class="action-td">
                             <div><button id="<?php echo $cinema->id?>_submit" class="btn-primary btn-success" onclick="submitCinema('<?php echo $cinema->id?>')" >Save</button></div>
                         </td>
@@ -56,7 +56,7 @@ if (isset($_SESSION['login'])
                 <tr id="cinema_new" class="no-hover-row">
                     <td><div><input id="new_cinema_id"     class="disabled-input" type="text"  value="Auto Generated" disabled/></div></td>
                     <td><div><input id="new_cinema_name"   class="custom-input"   type="text"  value=""  placeholder="Enter Name"/></div></td>
-                    <td><div><input id="new_cinema_owner"  class="disabled-input" type="text"  value="<?php echo $_SESSION['user_id']." (".$_SESSION['user_username'].")" ?>" disabled/></div></td>
+                    <td><div><input id="new_cinema_owner"  class="disabled-input owner-field" type="text"  value="<?php echo $_SESSION['user_id']." (".$_SESSION['user_username'].")" ?>" disabled/></div></td>
                     <td class="action-td">
                         <div><button id="new_cinema_submit" class="btn-primary btn-success" onclick="addCinema()" >Add</button></div>
                     </td>

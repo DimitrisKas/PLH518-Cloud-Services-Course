@@ -7,194 +7,281 @@ class Cinema
     public string $owner;
     public string $name;
 
-    const ID_PREFIX = "c";
-
     public function __construct($owner, $name)
     {
-        $this->generateID();
         $this->owner = $owner;
         $this->name = $name;
     }
 
+    /** Wraper function for creating Cinema objects through Document-like arrays.
+     *  For Cinemas without ID.
+     * @see CreateExistingUserObj
+     * @see fromDocumentWithID
+     * @param $doc 'Document object that contains all User data
+     * @return Cinema Object with user Data
+     */
+    public static function fromDocument($doc): Cinema
+    {
+        return new Cinema($doc['owner'], $doc['name']);
+    }
+
+    /** Wraper function for creating Cinema objects through Document-like arrays.
+     *  For Cinemas with ID.
+     * @see CreateExistingUserObj
+     * @see fromDocumentWithID
+     * @param $doc 'Document object that contains all User data
+     * @return Cinema Object with Cinema Data
+     */
+    public static function fromDocumentWithID($doc): Cinema
+    {
+        return self::CreateExistingCinemaObj($doc['id'], $doc['owner'], $doc['name'] );
+    }
+
+    /** Create a Cinema object for User that already exists in Database. (i.e. has an ID)
+     * @param $id
+     * @param $owner
+     * @param $name
+     * @return Cinema Object of cinema with given data
+     */
+    public static function CreateExistingCinemaObj($id, $owner, $name): Cinema
+    {
+        $cinema = new Cinema($owner, $name);
+        $cinema->id = $id;
+        return $cinema;
+    }
+
+    /** Add self to database
+     * @return bool Success boolean
+     */
     public function addToDB():bool
     {
-        if (empty($this->id))
-        {
-            logger("ID was empty");
-            return false;
-        }
-
         if (empty($this->name))
         {
             logger("Cinema name was empty");
             return false;
         }
 
-        if ($this->checkIfAlreadyExists())
-            logger("Cinema already exists!");
+        $ch = curl_init();
+        $url = "http://db-service/users/".$this->owner."/cinemas";
+        $fields = [
+            'owner'   => $this->owner,
+            'name'   => $this->name,
+        ];
 
-        $conn = OpenCon(true);
+        $fields_string = http_build_query($fields);
+        logger("Fields String: " . $fields_string);
 
-        $sql_str = "INSERT INTO Cinemas VALUES(?, ?, ?)";
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_POST, true);
+        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
 
-        $stmt = $conn->prepare($sql_str);
+        // Execute post
+        logger("Sending Request...");
+        $result = curl_exec($ch);
 
-        if (!$stmt->bind_param("sss", $id,$user_id, $movie_id))
-            logger("Binding error while Adding Cinema");
 
-        $id = $this->id;
-        $user_id = $this->owner;
-        $movie_id = $this->name;
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
 
-        if (!$stmt->execute())
+        if ($http_code == 203 || $http_code == 200)
         {
-            logger("Add Cinema failed: " . $stmt->error);
-            $stmt->close();
-            CloseCon($conn);
-            return false;
-        }
-        else
-        {
-            logger("Added Cinema successfully.");
-            $stmt->close();
-            CloseCon($conn);
+            logger("Cinema succesfully created!");
+            curl_close($ch);
             return true;
         }
+        else if ($http_code >= 400)
+        {
+            logger("Cinema was not created.");
+        }
+        else if (curl_errno($ch) == 6)
+        {
+            logger("Could not connect to db-service.");
+        }
+        else if (curl_errno($ch) != 0 )
+        {
+            logger("An error occured with cURL.");
+            logger("Error: ". curl_error($ch) . " .. errcode: " . curl_errno($ch));
+        }
+        curl_close($ch);
+
+        return false;
     }
 
-    private function generateID()
+    /** Retrieves all given user id owned Cinemas
+     * @param string $owner_id Id of user's cinemas we want to retrieve
+     * @return array Array of Cinema Object found for given user
+     */
+    public static function GetAllOwnerCinemas(string $owner_id):array
     {
-        do {
-            $this->id = getRandomString(9, $this::ID_PREFIX);
-        } while($this->checkIfUniqueID() === false);
+        if (empty($owner_id))
+        {
+            logger("Owner id was empty");
+            return array();
+        }
+
+        $ch = curl_init();
+        $url = "http://db-service/users/".$owner_id."/cinemas";
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+
+        // Execute post
+        logger("Sending Request...");
+        $result = curl_exec($ch);
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+
+        // In case of error
+        $errno = curl_errno($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+
+        // Parse results
+        if ($http_code == 200)
+        {
+            logger("Retrieved all cinemas for user with id ".$owner_id);
+            $result = json_decode($result, true);
+
+            $cinemas = array();
+            $i =0;
+            foreach ($result as $cinema_doc)
+            {
+                $cinemas[$i++] =  Cinema::fromDocumentWithID($cinema_doc);
+            }
+            return $cinemas;
+        }
+        else if ($http_code >= 400)
+        {
+            logger("Cinemas could not be retrieved");
+            return array();
+        }
+        else if ($errno == 6)
+        {
+            logger("Could not connect to db-service.");
+            return array();
+        }
+        else if ($errno != 0 )
+        {
+            logger("An error occured with cURL.");
+            logger("Error: ". $err . " .. errcode: " . $errno);
+            return array();
+        }
+
+        return array();
     }
 
-    public function checkIfUniqueID():bool
+
+    /** Edit a Cinema
+     * @param string $cinema_id Cinema's ID which we want to edit
+     * @param string $name Cinema's Name
+     * @param string $owner_id Cinema owner's ID
+     * @return bool Success boolean
+     */
+    public static function EditCinema(string $cinema_id, string $name, string $owner_id):bool
     {
-        $conn = OpenCon(true);
-
-        $sql_str = "SELECT ID FROM Cinemas WHERE id=?";
-        $stmt = $conn->prepare($sql_str);
-        $stmt->bind_param("s",$id);
-        $id = $this->id;
-
-        if (!$stmt->execute())
-            logger("Check Cinemas ID failed " . $stmt->error);
-
-        if ($stmt->affected_rows === 1)
+        if (empty($name) || empty($cinema_id))
+        {
+            logger("Cinema name or id was empty");
             return false;
-        else
+        }
+
+        $ch = curl_init();
+        $url = "http://db-service/users/".$owner_id."/cinemas/".$cinema_id;
+        $fields = [
+            'name'   => $name,
+        ];
+
+        $fields_string = http_build_query($fields);
+        logger("Fields String: " . $fields_string);
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+
+        // Execute post
+        logger("Sending Request...");
+        $result = curl_exec($ch);
+
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+
+        if ($http_code == 204 || $http_code == 200)
+        {
+            logger("Cinema succesfully created!");
+            curl_close($ch);
             return true;
+        }
+        else if ($http_code >= 400)
+        {
+            logger("Cinema was not created.");
+        }
+        else if (curl_errno($ch) == 6)
+        {
+            logger("Could not connect to db-service.");
+        }
+        else if (curl_errno($ch) != 0 )
+        {
+            logger("An error occured with cURL.");
+            logger("Error: ". curl_error($ch) . " .. errcode: " . curl_errno($ch));
+        }
+        curl_close($ch);
+
+        return false;
     }
 
-    public function checkIfAlreadyExists():bool
+    /** Deletes Cinema from Database
+     * @param string $cinema_id Id of cinema to delete
+     * @param string $owner_id Owners ID
+     * @return bool Success boolean
+     */
+    public static function DeleteCinema(string $cinema_id, string $owner_id): bool
     {
-        $conn = OpenCon(true);
+        logger("Trying to delete cinema with id: " . $cinema_id);
 
-        $sql_str = "SELECT ID FROM Cinemas WHERE ID=?";
-        $stmt = $conn->prepare($sql_str);
-        $stmt->bind_param("s",$this->id);
+        $ch = curl_init();
+        $url = "http://db-service/users/".$owner_id."/cinemas/".$cinema_id ;
 
-        if (!$stmt->execute())
-            logger("Check for duplicate Cinema failed " . $stmt->error);
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "DELETE");
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
 
-        if ($stmt->affected_rows === 1)
-            return false;
-        else
+        // Execute post
+        logger("Sending Request... at ". $url);
+        $result = curl_exec($ch);
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+
+        // In case of error
+        $errno = curl_errno($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        // Parse results
+        if ($http_code == 204)
             return true;
+
+        else if ($http_code >= 400)
+            logger("User could not be deleted.");
+
+        else if ($errno == 6)
+            logger("Could not connect to db-service.");
+
+        else if ($errno != 0 )
+            logger("An error occured with cURL. \n
+                Error: ". $err . " .. errcode: " . $errno);
+
+        return false;
     }
 
-    public static function CreateExistingCinemaObj($id, $owner, $name):Cinema
-    {
-        $cinema = new Cinema( $owner, $name);
-        $cinema->id = $id;
-        return $cinema;
-    }
-
-    public static function EditCinema(string $id, string $name):bool
-    {
-        $conn = OpenCon(true);
-
-        $sql_str = "UPDATE Cinemas SET NAME=? WHERE ID=?";
-        $stmt = $conn->prepare($sql_str);
-        $stmt->bind_param("ss", $name, $id);
-
-        if (!$stmt->execute())
-        {
-            logger("Edit Cinema failed " . $stmt->error);
-            $success = false;
-        }
-        else
-        {
-            logger("Edited Cinema successfully!");
-            $success = true;
-        }
-
-        // Cleanup
-        $stmt->close();
-        CloseCon($conn);
-
-        return $success;
-    }
-
-    public static function DeleteCinema(string $id):bool
-    {
-        $conn = OpenCon(true);
-
-        $sql_str = "DELETE FROM Cinemas WHERE ID=?";
-        $stmt = $conn->prepare($sql_str);
-        $stmt->bind_param("s",$id);
-
-        if (!$stmt->execute())
-        {
-            logger("Remove Cinema failed " . $stmt->error);
-            $success = false;
-        }
-        else
-        {
-            logger("Removed Cinema successfully!");
-            $success = true;
-        }
-
-        // Cleanup
-        $stmt->close();
-        CloseCon($conn);
-
-        return $success;
-    }
-
-    public static function GetAllOwnerCinemas(string $user_id):array
-    {
-        $conn = OpenCon(true);
-
-        $sql_str = "SELECT * FROM Cinemas WHERE OWNER=?";
-        $stmt = $conn->prepare($sql_str);
-        $stmt->bind_param("s", $id);
-
-        $id = $user_id;
-
-        if (!$stmt->execute())
-            logger("Get Cinemas failed " . $stmt->error);
-
-        $result = $stmt->get_result();
-
-        $num_of_rows = $result->num_rows;
-        logger("Found " . $num_of_rows . " cinemas.");
-
-        $ret_array = array();
-        while ($row = $result->fetch_assoc()) {
-
-            // Create object and append to return array
-            $cinema = Cinema::CreateExistingCinemaObj($row['ID'], $row['OWNER'], $row['NAME']);
-            $ret_array[] = $cinema;
-        }
-
-        $stmt->free_result();
-        $stmt->close();
-
-        CloseCon($conn);
-
-        return $ret_array;
-    }
 
 }

@@ -23,7 +23,7 @@ if (isset($_SESSION['login'])
 
     If (isset($data['cinema_id']))
     {
-        $success_flag = Cinema::EditCinema($data['cinema_id'], $data['cinema_name']);
+        $success_flag = Cinema::EditCinema($data['cinema_id'], $data['cinema_name'], $_SESSION['user_id']);
         echo json_encode($success_flag);
         exit();
     }

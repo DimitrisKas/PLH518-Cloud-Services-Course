@@ -79,7 +79,9 @@ else
     <div class="card">
         <h4>Manage Your Cinemas</h4>
         <hr/>
-
+        <div id="popup-box-cont" class="f-success" hidden>
+            <p id="popup-box-text" ></p>
+        </div>
         <div id="cinemas-container" class="table-container">
             <table id="cinemas-table">
                 <tr>
@@ -98,9 +100,9 @@ else
                 {
                     ?>
                     <tr id="cinema_<?php echo $cinema->id?>">
-                        <td><div><input id="<?php echo $cinema->id?>_id"      type="text"  value="<?php echo $cinema->id?>"     class="disabled-input" disabled/></div></td>
+                        <td><div><input id="<?php echo $cinema->id?>_id"      type="text"  value="<?php echo $cinema->id?>"     class="disabled-input id-field" disabled/></div></td>
                         <td><div><input id="<?php echo $cinema->id?>_name"    type="text"  value="<?php echo $cinema->name?>"   class="custom-input"/></div></td>
-                        <td><div><input id="<?php echo $cinema->id?>_owner"   type="text"  value="<?php echo $cinema->owner." (".$_SESSION['user_username'].")" ?>"  class="disabled-input" disabled/></div></td>
+                        <td><div><input id="<?php echo $cinema->id?>_owner"   type="text"  value="<?php echo $cinema->owner." (".$_SESSION['user_username'].")" ?>"  class="disabled-input owner-field" disabled/></div></td>
                         <td class="action-td">
                             <div><button id="<?php echo $cinema->id?>_submit" class="btn-primary btn-success" onclick="submitCinema('<?php echo $cinema->id?>')" >Save</button></div>
                         </td>
@@ -117,7 +119,7 @@ else
                 <tr id="cinema_new" class="no-hover-row">
                     <td><div><input id="new_cinema_id"     class="disabled-input" type="text"  value="Auto Generated" disabled/></div></td>
                     <td><div><input id="new_cinema_name"   class="custom-input"   type="text"  value=""  placeholder="Enter Name"/></div></td>
-                    <td><div><input id="new_cinema_owner"  class="disabled-input" type="text"  value="<?php echo $_SESSION['user_id']." (".$_SESSION['user_username'].")" ?>" disabled/></div></td>
+                    <td><div><input id="new_cinema_owner"  class="disabled-input owner-field" type="text"  value="<?php echo $_SESSION['user_id']." (".$_SESSION['user_username'].")" ?>" disabled/></div></td>
                     <td class="action-td">
                         <div><button id="new_cinema_submit" class="btn-primary btn-success" onclick="addCinema()" >Add</button></div>
                     </td>
@@ -222,6 +224,9 @@ else
 </div>
 </body>
 <script type="text/javascript">
+
+    document.getElementById("popup-box-cont").hidden = false;
+
     function getCinemas()
     {
         fetch('async/cinema_get.php', {
@@ -248,10 +253,9 @@ else
             .then( response => {
                 return response.json();
             })
-            .then( data => {
-                if (data !== false) {
-                    getCinemas();
-                }
+            .then( success => {
+                showModal(success);
+                getCinemas();
             });
     }
 
@@ -268,10 +272,9 @@ else
             .then( response => {
                 return response.json();
             })
-            .then( data =>{
-                if (data !== false) {
-                    getCinemas();
-                }
+            .then( success => {
+                showModal(success);
+                getCinemas();
             });
     }
 
@@ -285,10 +288,9 @@ else
             .then( response => {
                 return response.json();
             })
-            .then( data =>{
-                if (data !== false) {
-                    getCinemas();
-                }
+            .then( success => {
+                showModal(success);
+                getCinemas();
             });
     }
 
@@ -344,9 +346,8 @@ else
                 return response.json();
             })
             .then( success =>{
-                if (success) {
-                    getMovies();
-                }
+                showModal(success);
+                getMovies();
             });
     }
 
@@ -368,9 +369,8 @@ else
                 return response.json();
             })
             .then( success =>{
-                if (success) {
-                    getMovies();
-                }
+                showModal(success);
+                getMovies();
             });
     }
 
@@ -385,10 +385,35 @@ else
                 return response.json();
             })
             .then( success =>{
-                if (success) {
-                    getMovies();
-                }
+                showModal(success);
+                getMovies();
             });
+    }
+
+
+    function showModal(isSuccessful)
+    {
+        let text_obj = document.getElementById("popup-box-text");
+        let cont_obj = document.getElementById("popup-box-cont");
+        // document.getElementById("popup-box-cont").classList.remove("popup-hidden");
+
+        document.getElementById("popup-box-cont").classList.add("popup-show");
+
+        if (isSuccessful)
+        {
+            text_obj.innerText = "Success!";
+            cont_obj.classList.remove("f-warning");
+            cont_obj.classList.add("f-success");
+        }
+        else
+        {
+            text_obj.innerText = "An error occured!";
+            cont_obj.classList.remove("f-success");
+            cont_obj.classList.add("f-error");
+
+        }
+
+        setTimeout(function () { document.getElementById("popup-box-cont").classList.remove("popup-show");}, 2500);
     }
 </script>
 </html>
