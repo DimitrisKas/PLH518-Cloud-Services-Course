@@ -269,7 +269,7 @@ else
 
         }
 
-        setTimeout(function () { document.getElementById("popup-box-cont").classList.remove("popup-show");}, 102500);
+        setTimeout(function () { document.getElementById("popup-box-cont").classList.remove("popup-show");}, 2500);
     }
 
 </script>
