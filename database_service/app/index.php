@@ -260,6 +260,19 @@ $app->get('/users/{u_id}/movies/owned', function (Request $request, Response $re
     return $response;
 });
 
+// GET /users/{u_id}/movies/all
+// - Retrieve all users movies
+$app->get('/users/{u_id}/movies/all', function (Request $request, Response $response, $args) {
+
+    $id = $args['u_id'];
+    logger("\n --- At [GET] /users/".$id."/movies/all");
+    $movies = Movie::getAll($id);
+
+    $response->getBody()->write(json_encode($movies));
+    return $response;
+});
+
+
 
 // PUT /users/{u_id}/cinemas/{c_uid}/movies
 // - Edit movie
