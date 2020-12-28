@@ -8,11 +8,12 @@ use Models\Generic\User;
 use MongoDB\BSON\ObjectId;
 
 /**
- * Class User
- * @package Models
- * @implements User
+ * Class UserM extends Generic User Class
+ * @package Models\Mongo
  */
 class UserM extends User implements iRestObject {
+
+    public const COLL_NAME = "Users";
 
     public function __construct($doc) {
         parent::__construct($doc);

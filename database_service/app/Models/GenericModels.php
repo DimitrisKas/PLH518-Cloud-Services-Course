@@ -51,8 +51,22 @@ class Movie
     public string $end_date;
     public string $cinema_name;
     public string $category;
-    public bool $favorite = false;
 
+
+    /** Create Cinema object from document with cinema data
+     * @param $doc array Document array with data
+     * @param $owner string optional owner id string
+     */
+    public function __construct($doc) {
+        if ( !empty($doc['_id']) )
+            $this->id = $doc['_id']->__toString();
+
+        $this->title = $doc['title'];
+        $this->cinema_name = $doc['cinema_name'];
+        $this->start_date = $doc['start_date'];
+        $this->end_date = $doc['end_date'];
+        $this->category = $doc['category'];
+    }
 }
 
 class Favorite

@@ -2,27 +2,25 @@
 
 namespace Models\Mongo;
 
-use http\Exception;
 use RestAPI\Result;
 use RestAPI\iRestObject;
 use Models\Generic\Cinema;
 use MongoDB\BSON\ObjectId;
 
 /**
- * Class User
- * @package Models
- * @implements User
+ * Class CinemaM extends Generic Cinema Class
+ * @package Models\Mongo
  */
 class CinemaM extends Cinema implements iRestObject
 {
-    private const COLL_NAME = "Cinemas";
+    public const COLL_NAME = "Cinemas";
 
     public function __construct($doc, $owner)
     {
         parent::__construct($doc, $owner);
     }
 
-    /** Adds user to database if username is unique
+    /** Adds Movie to database if name is unique
      * @param $obj Cinema
      * @return Result Result object with success boolean and a message
      */
@@ -39,7 +37,11 @@ class CinemaM extends Cinema implements iRestObject
         if (empty($obj->owner))
             return Result::withLogMsg("Owner was empty.", false);
 
-        // Create New User
+        // If Cinema Name already exists
+        if (self::searchByName($obj->name) == true)
+            return Result::withLogMsg("Cinema with same name already exists", false);
+
+        // Create New Cinema
         $db = connect();
         $coll = $db->selectCollection(CinemaM::COLL_NAME);
         $insertResult = $coll->insertOne($obj);
@@ -57,7 +59,6 @@ class CinemaM extends Cinema implements iRestObject
 
     /**
      * Search for a single cinema based on name.
-     * Since cinema names are not unique, the first match will be returned
      * @param string $name Name to base search on
      * @return Cinema|false Returns Cinema object if found, false othewise
      */
@@ -80,7 +81,7 @@ class CinemaM extends Cinema implements iRestObject
 
 
     /**
-     * Get a single user based on given id
+     * Get a single cinema based on given id
      * @param string $id
      * @return Cinema|false Returns Cinema object on success, false othewise
      */
@@ -121,7 +122,6 @@ class CinemaM extends Cinema implements iRestObject
         $updateResult = $coll->updateOne(
             ['_id' => new ObjectId($id)],
             ['$set'=> [
-                'username' => $obj->owner,
                 'name' => $obj->name,
             ]]
         );
@@ -139,7 +139,7 @@ class CinemaM extends Cinema implements iRestObject
                 return Result::withLogMsg("Nothing to edit or couldn't edit Cinema with id: " . $id, false);
         }
 
-        return new Result("Success Editing User", true);
+        return new Result("Success Editing Cinema", true);
 
     }
 
