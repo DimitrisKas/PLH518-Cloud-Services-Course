@@ -23,7 +23,7 @@ if (isset($_SESSION['login'])
 
     If (isset($data['movie_id']))
     {
-        $success_flag = Movie::DeleteMovie($data['movie_id']);
+        $success_flag = Movie::DeleteMovie($_SESSION['user_id'], $data['movie_id']);
         echo json_encode($success_flag);
         exit();
     }

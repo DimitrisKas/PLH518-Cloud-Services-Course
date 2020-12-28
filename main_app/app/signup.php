@@ -44,12 +44,7 @@ if (!empty($_POST))
         // Create User Object
         $user = new User($_POST['name'], $_POST['surname'],$_POST['username'],$_POST['password'], $_POST['email'],$_POST['role'], false);
 
-        if ($user->checkIfUniqueUsername() === false)
-        {
-            logger("Username alreaddy exists.");
-            $f_title = "Username already exists";
-        }
-        else if ($user->addToDB() === false)
+        if ($user->addToDB() === false)
         {
             logger("Error adding user.");
             $f_title = "Internal error while adding new user";

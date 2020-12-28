@@ -48,7 +48,7 @@ else
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - CineMania</title>
+    <title>Owner Panel - CineMania</title>
     <link rel='stylesheet' type='text/css' href='CSS/main.css' />
     <link rel='stylesheet' type='text/css' href='CSS/owner.css' />
 </head>
@@ -320,15 +320,30 @@ else
         let startDate = document.getElementById('new_movie_start_date').value;
         let endDate = document.getElementById('new_movie_end_date').value;
 
-        // Get current date, plus the date in 7 days
+        // Get current date
         let today = new Date();
-        let in7days = new Date(today.getTime() +  7 * 24 * 60 * 60 * 1000);
+        let in7days;
 
+        // If startDate is empty, in7days will be from today. Otherwise from given startDate
         if (startDate === "")
+        {
             startDate = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+            in7days = new Date(today.getTime() +  7 * 24 * 60 * 60 * 1000);
+        }
+        else
+        {
+            in7days = new Date(new Date(startDate).getTime() +  7 * 24 * 60 * 60 * 1000);
+        }
 
         if (endDate === "")
-            endDate = in7days.getFullYear()+'-'+(in7days.getMonth()+1)+'-'+in7days.getDate();
+        {
+            let month = in7days.getMonth()+1;
+            let day = in7days.getDate();
+            let dayStr = ((day < 10) ? "0" : "") + day;
+            let monStr = ((month < 10) ? "0" : "") + month;
+
+            endDate = in7days.getFullYear()+'-'+monStr+'-'+dayStr;
+        }
 
         // Initiate the request
         fetch('async/movie_add.php', {

@@ -122,7 +122,7 @@ class User
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         logger("HTTP code: ". $http_code);
 
-        if ($http_code == 203 || $http_code == 200)
+        if ($http_code == 201 || $http_code == 200)
         {
             logger("User succesfully created!");
             curl_close($ch);

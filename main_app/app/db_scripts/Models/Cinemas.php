@@ -15,10 +15,10 @@ class Cinema
 
     /** Wraper function for creating Cinema objects through Document-like arrays.
      *  For Cinemas without ID.
-     * @see CreateExistingUserObj
+     * @see CreateExistingCinemaObj
      * @see fromDocumentWithID
      * @param $doc 'Document object that contains all User data
-     * @return Cinema Object with user Data
+     * @return Cinema Object with Cinema Data
      */
     public static function fromDocument($doc): Cinema
     {
@@ -27,7 +27,7 @@ class Cinema
 
     /** Wraper function for creating Cinema objects through Document-like arrays.
      *  For Cinemas with ID.
-     * @see CreateExistingUserObj
+     * @see CreateExistingCinemaObj
      * @see fromDocumentWithID
      * @param $doc 'Document object that contains all User data
      * @return Cinema Object with Cinema Data
@@ -49,6 +49,7 @@ class Cinema
         $cinema->id = $id;
         return $cinema;
     }
+
 
     /** Add self to database
      * @return bool Success boolean
@@ -85,7 +86,7 @@ class Cinema
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         logger("HTTP code: ". $http_code);
 
-        if ($http_code == 203 || $http_code == 200)
+        if ($http_code == 201 || $http_code == 200)
         {
             logger("Cinema succesfully created!");
             curl_close($ch);
@@ -244,6 +245,18 @@ class Cinema
      */
     public static function DeleteCinema(string $cinema_id, string $owner_id): bool
     {
+        if (empty($cinema_id))
+        {
+            logger("No cinema id given");
+            return false;
+        }
+
+        if (empty($owner_id))
+        {
+            logger("No user id given");
+            return false;
+        }
+
         logger("Trying to delete cinema with id: " . $cinema_id);
 
         $ch = curl_init();
@@ -271,7 +284,7 @@ class Cinema
             return true;
 
         else if ($http_code >= 400)
-            logger("User could not be deleted.");
+            logger("Cinema could not be deleted.");
 
         else if ($errno == 6)
             logger("Could not connect to db-service.");

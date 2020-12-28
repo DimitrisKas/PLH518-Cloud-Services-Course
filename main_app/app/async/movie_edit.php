@@ -24,8 +24,13 @@ if (isset($_SESSION['login'])
     If (isset($data['movie_id']))
     {
         $success_flag = Movie::EditMovie(
-            $data['movie_id'], $data['movie_title'], $data['movie_start_date'],
-            $data['movie_end_date'], $data['movie_cinema_name'], $data['movie_category']
+            $_SESSION['user_id'],
+            $data['movie_id'],
+            $data['movie_title'],
+            $data['movie_start_date'],
+            $data['movie_end_date'],
+            $data['movie_cinema_name'],
+            $data['movie_category']
         );
 
         echo json_encode($success_flag);
