@@ -26,27 +26,27 @@ class UserM extends User implements iRestObject {
     public static function addOne($obj): Result
     {
         if (empty($obj->username))
-            return Result::withLogMsg("Username was empty.", false);
+            return Result::withLogMsg(false, "Username was empty.", );
 
         if (empty($obj->password))
-            return Result::withLogMsg("Password was empty.", false);
+            return Result::withLogMsg(false, "Password was empty.", );
 
         // If username already exists
         if (self::searchByUsername($obj->username) == true)
-            return Result::withLogMsg("Username already exists", false);
+            return Result::withLogMsg(false, "Username already exists", );
 
 
         // Create New User
         $db = connect();
-        $coll = $db->selectCollection("Users");
+        $coll = $db->selectCollection(UserM::COLL_NAME);
         $insertResult = $coll->insertOne($obj);
 
         if ($insertResult->getInsertedCount() != 1)
         {
-            return Result::withLogMsg("Couldn't insert user with username: " . $obj->username, false);
+            return Result::withLogMsg(false, "Couldn't insert user with username: " . $obj->username, );
         }
 
-        return Result::withLogMsg("User ".$obj->username." successfully  created", true);
+        return Result::withLogMsg(true, "User ".$obj->username." successfully  created", );
     }
 
     /**
@@ -57,7 +57,7 @@ class UserM extends User implements iRestObject {
     public static function searchByUsername(string $username): User|false
     {
         $db = connect();
-        $coll = $db->selectCollection("Users");
+        $coll = $db->selectCollection(UserM::COLL_NAME);
         $user_doc = $coll->findOne(['username' => $username]);
 
         if ($user_doc == null )
@@ -78,7 +78,7 @@ class UserM extends User implements iRestObject {
     public static function getOne(string $id): User|false
     {
         $db = connect();
-        $coll = $db->selectCollection("Users");
+        $coll = $db->selectCollection(UserM::COLL_NAME);
         $user_doc = $coll->findOne(['_id' => new ObjectId($id)]);
 
         if ($user_doc == null )
@@ -108,7 +108,7 @@ class UserM extends User implements iRestObject {
         logger("With id: ". $id);
 
         $db = connect();
-        $coll = $db->selectCollection("Users");
+        $coll = $db->selectCollection(UserM::COLL_NAME);
         $updateResult = $coll->updateOne(
             ['_id' => new ObjectId($id)],
             ['$set'=> [
@@ -177,17 +177,17 @@ class UserM extends User implements iRestObject {
             return new Result("Empty id", false);
 
         $db = connect();
-        $coll = $db->selectCollection("Users");
+        $coll = $db->selectCollection(UserM::COLL_NAME);
         $deleteResult = $coll->deleteOne([
             '_id' => new ObjectId($id)
         ]);
 
         if ($deleteResult->getDeletedCount() != 1)
         {
-            return Result::withLogMsg("Couldn't find user with id: " . $id, false);
+            return Result::withLogMsg(false, "Couldn't find user with id: " . $id, );
         }
         else
-            return Result::withLogMsg("" . $id, true);
+            return Result::withLogMsg(true, "" . $id, );
 
     }
 
@@ -198,7 +198,7 @@ class UserM extends User implements iRestObject {
     public static function getAll(): array
     {
         $db = connect();
-        $cursor = $db->selectCollection("Users")->find();
+        $cursor = $db->selectCollection(UserM::COLL_NAME)->find();
 
         $users = array();
         $i = 0;
@@ -219,21 +219,58 @@ class UserM extends User implements iRestObject {
      */
     public static function Login(string $username, string $password): User|Result {
         $db = connect();
-        $coll = $db->selectCollection("Users");
+        $coll = $db->selectCollection(UserM::COLL_NAME);
         $user_doc = $coll->findOne([
             'username' => $username,
             'password' => $password
         ]);
 
         if ($user_doc == null )
-            return Result::withLogMsg("Wrong credentials for user " . $username, false);
+            return Result::withLogMsg(false, "Wrong credentials for user " . $username, );
 
         // Check if confirmed
         if ($user_doc['confirmed'] == false)
-            return Result::withLogMsg("User not confirmed!", false);
+            return Result::withLogMsg(false, "User not confirmed!", );
 
         logger("Successfully logged in user: " . $username);
         logger("User id: ", $user_doc['_id']->__toSTring());
         return new User($user_doc);
+    }
+
+    public static function addFavorite(string $user_id, string $movie_id): Result
+    {
+        $db = connect();
+        $coll = $db->selectCollection(UserM::COLL_NAME);
+        $update_doc = $coll->findOneAndUpdate(
+            ['_id' => new ObjectId($user_id)],
+            ['$addToSet' => [
+                'favorites' => $movie_id
+            ]]
+        );
+
+        if ($update_doc == null)
+            return Result::withLogMsg(false, "Couldn't add favorite to user with id: " . $user_id, );
+
+        else
+            return Result::withLogMsg(true,  );
+    }
+
+
+    public static function removeFavorite(string $user_id, string $movie_id): Result
+    {
+        $db = connect();
+        $coll = $db->selectCollection(UserM::COLL_NAME);
+        $update_doc = $coll->findOneAndUpdate(
+            ['_id' => new ObjectId($user_id)],
+            ['$pull' => [
+                'favorites' => $movie_id
+            ]]
+        );
+
+        if ($update_doc == null)
+            return Result::withLogMsg(false, "Couldn't remove favorite to user with id: " . $user_id, );
+
+        else
+            return Result::withLogMsg(true, );
     }
 }

@@ -10,6 +10,6 @@ function logger($msg)
 // Get Last 10000 characters from logs
 function getLogs(): string
 {
-    return file_get_contents( $_SERVER['DOCUMENT_ROOT'].'/Utils/Logs/log.txt', false, null, 0);
+    return file_get_contents( $_SERVER['DOCUMENT_ROOT'].'/Utils/Logs/log.txt', false, null, -10000);
 
 }

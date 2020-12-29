@@ -29,17 +29,17 @@ class CinemaM extends Cinema implements iRestObject
         logger("Creating Cinema... ");
 
         if ($obj instanceof Cinema == false)
-            return Result::withLogMsg("Invalid Object argument given.", false);
+            return Result::withLogMsg(false, "Invalid Object argument given.");
 
         if (empty($obj->name))
-            return Result::withLogMsg("Name was empty.", false);
+            return Result::withLogMsg(false, "Name was empty.");
 
         if (empty($obj->owner))
-            return Result::withLogMsg("Owner was empty.", false);
+            return Result::withLogMsg(false, "Owner was empty.");
 
         // If Cinema Name already exists
         if (self::searchByName($obj->name) == true)
-            return Result::withLogMsg("Cinema with same name already exists", false);
+            return Result::withLogMsg(false, "Cinema with same name already exists");
 
         // Create New Cinema
         $db = connect();
@@ -50,11 +50,11 @@ class CinemaM extends Cinema implements iRestObject
         {
             if ($insertResult->getInsertedCount() != 1)
             {
-                return Result::withLogMsg("Couldn't insert cinema with name: " . $obj->name, false);
+                return Result::withLogMsg(false, "Couldn't insert cinema with name: " . $obj->name);
             }
         }
 
-        return Result::withLogMsg("Cinema ".$obj->name." successfully  created", true);
+        return Result::withLogMsg(true, "Cinema ".$obj->name." successfully  created");
     }
 
     /**
@@ -109,7 +109,7 @@ class CinemaM extends Cinema implements iRestObject
     public static function updateOne(string $id, $obj): Result
     {
         if ($obj instanceof Cinema == false)
-            return Result::withLogMsg("Invalid Object argument given.", false);
+            return Result::withLogMsg(false, "Invalid Object argument given.");
 
         logger("Editing Cinema...");
         if (empty($id))
@@ -133,10 +133,10 @@ class CinemaM extends Cinema implements iRestObject
             logger("Matched Count: " . $updateResult->getMatchedCount());
             logger("Modified Count: " . $updateResult->getModifiedCount());
             if ($updateResult->getMatchedCount() != 1)
-                return Result::withLogMsg("Couldn't find Cinema with id: " . $id, false);
+                return Result::withLogMsg(false, "Couldn't find Cinema with id: " . $id);
 
             else if ($updateResult->getModifiedCount() != 1)
-                return Result::withLogMsg("Nothing to edit or couldn't edit Cinema with id: " . $id, false);
+                return Result::withLogMsg(false, "Nothing to edit or couldn't edit Cinema with id: " . $id);
         }
 
         return new Result("Success Editing Cinema", true);
@@ -153,6 +153,9 @@ class CinemaM extends Cinema implements iRestObject
         if (empty($id))
             return new Result("Empty id", false);
 
+        // Keep for cascading deletions later
+        $cinema_name = self::getone($id)->name;
+
         $db = connect();
         $coll = $db->selectCollection(CinemaM::COLL_NAME);
         $deleteResult = $coll->deleteOne([
@@ -161,11 +164,27 @@ class CinemaM extends Cinema implements iRestObject
 
         if ($deleteResult->getDeletedCount() != 1)
         {
-            return Result::withLogMsg("Couldn't find Cinema with id: " . $id, false);
+            return Result::withLogMsg(false, "Couldn't find Cinema with id: " . $id);
         }
-        else
-            return Result::withLogMsg("", true);
 
+        // Delete movies from this cinema
+        $cursor = $db
+                ->selectCollection(MovieM::COLL_NAME)
+                ->find(['cinema_name' => $cinema_name]);
+
+        /* Delete each one through the deleteOne function of its class
+           Note: We could alternatively immediately delete the corresponding
+                 movie documents from the above query, but this way we can allow
+                 the MovieM class to cascade the deletion of corresponding favorites
+                 on each movie.
+        */
+        foreach($cursor as $movie_doc)
+        {
+            MovieM::deleteOne($movie_doc['_id']->__toString());
+        }
+
+
+        return Result::withLogMsg(true, "");
     }
 
     /**

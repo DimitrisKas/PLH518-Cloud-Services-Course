@@ -24,10 +24,14 @@ class Result {
      * @param bool $success True if success, false otherwise
      * @return Result Result object with given parameters
      */
-    static public function withLogMsg(string $msg, bool $success): Result
+    static public function withLogMsg(bool $success, string $msg = null ): Result
     {
-        logger($msg);
-        return new Result($msg,$success);
+        if (!empty($msg))
+        {
+            logger($msg);
+            return new Result($msg,$success);
+        }
+        return new Result("",$success);
     }
 }
 

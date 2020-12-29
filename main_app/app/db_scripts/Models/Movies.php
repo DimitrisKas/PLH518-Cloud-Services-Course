@@ -9,43 +9,45 @@ class Movie
     public string $end_date;
     public string $cinema_name;
     public string $category;
-    public bool $favorite = false;
+    public bool $isFavorite = false;
 
-    public function __construct($title, $start_date, $end_date, $cinema_name, $category)
+    public function __construct($title, $start_date, $end_date, $cinema_name, $category, $isFavorite)
     {
         $this->title = $title;
         $this->start_date = $start_date;
         $this->end_date = $end_date;
         $this->cinema_name = $cinema_name;
         $this->category = $category;
+        $this->isFavorite = $isFavorite;
     }
 
     /** Wraper function for creating Movies objects through Document-like arrays.
      *  For Movies without ID.
-     * @see CreateExistingMovieObj
-     * @see fromDocumentWithID
      * @param $doc 'Document object that contains all User data
      * @return Movie Object with movie Data
+     * @see CreateExistingMovieObj
+     * @see FromDocumentWithID
      */
-    public static function fromDocument($doc): Movie
+    public static function FromDocument($doc): Movie
     {
         return new Movie(
             $doc['title'],
             $doc['start_date'],
             $doc['end_date'],
             $doc['cinema_name'],
-            $doc['category']
+            $doc['category'],
+            isset($doc['isFavorite']) ? $doc['isFavorite'] : false
         );
     }
 
     /** Wraper function for creating Movie objects through Document-like arrays.
      *  For Movies with ID.
-     * @see CreateExistingMovieObj
-     * @see fromDocumentWithID
      * @param $doc 'Document object that contains all User data
      * @return Movie Object with Movie Data
+     * @see CreateExistingMovieObj
+     * @see FromDocumentWithID
      */
-    public static function fromDocumentWithID($doc): Movie
+    public static function FromDocumentWithID($doc): Movie
     {
         return self::CreateExistingMovieObj(
             $doc['id'],
@@ -53,7 +55,8 @@ class Movie
             $doc['start_date'],
             $doc['end_date'],
             $doc['cinema_name'],
-            $doc['category']
+            $doc['category'],
+            isset($doc['isFavorite']) ? $doc['isFavorite'] : false
         );
     }
 
@@ -66,9 +69,9 @@ class Movie
      * @param $category
      * @return Movie Object of Movie with given data
      */
-    public static function CreateExistingMovieObj($id, $title, $start_date, $end_date, $cinema_name, $category): Movie
+    public static function CreateExistingMovieObj($id, $title, $start_date, $end_date, $cinema_name, $category, $isFavorite): Movie
     {
-        $movie = new Movie($title, $start_date, $end_date, $cinema_name, $category);
+        $movie = new Movie($title, $start_date, $end_date, $cinema_name, $category, $isFavorite);
         $movie->id = $id;
         return $movie;
     }
@@ -256,10 +259,7 @@ class Movie
         return false;
     }
 
-    public static function AddToFavorites(string $movie_id, string $user_id)
-    {
 
-    }
 
     public static function GetAllMovies($user_id):array {
         if (empty($user_id))
@@ -293,12 +293,13 @@ class Movie
         {
             logger("Retrieved all movies for user with id ".$user_id);
             $result = json_decode($result, true);
+            logger("Movies: " . var_export($result,true));
 
             $movies = array();
             $i =0;
-            foreach ($result as $cinema_doc)
+            foreach ($result as $movie_doc)
             {
-                $movies[$i++] =  Movie::fromDocumentWithID($cinema_doc);
+                $movies[$i++] =  Movie::FromDocumentWithID($movie_doc);
             }
             return $movies;
         }
@@ -324,67 +325,67 @@ class Movie
 
     public static function Search($current_user_id, $title, $date, $cinema_name, $category):array
     {
-        $conn = OpenCon(true);
-
-        // Validate search input
-        if (empty($title))
-            $title = "%";
-        else
-            $title = "%".$title."%";
-
-        if (empty($cinema_name))
-            $cinema_name = "%";
-        else
-            $cinema_name = "%".$cinema_name."%";
-
-        if (empty($category))
-            $category = "%";
-        else
-            $category = "%".$category."%";
-
-        $doDateSearch = true;
-        if (empty($date))
-        {
-            $date = "0000-00-00";
-            $doDateSearch = false;
-        }
-
-        logger("Date: " . $date);
-        logger("doDateSearch: " . $doDateSearch);
-
-        $sql_str = "SELECT m.ID as m_ID,  m.TITLE, m.STARTDATE, m.ENDDATE, m.CINEMANAME, m.CATEGORY, f.ID as f_ID 
-                    FROM Movies m 
-                        LEFT JOIN Favorites f ON f.USERID = ? AND f.MOVIEID = m.ID
-                    WHERE m.TITLE LIKE ? AND m.CINEMANAME LIKE ? AND m.CATEGORY LIKE ? AND ( ?=FALSE OR  (DATEDIFF(m.STARTDATE, ?) >= 0 AND  DATEDIFF(?, m.ENDDATE) >= 0));";
-        $stmt = $conn->prepare($sql_str);
-        $stmt->bind_param("ssssiss", $current_user_id, $title, $cinema_name, $category, $doDateSearch, $date, $date);
-
-        if (!$stmt->execute())
-            logger("Get all movies failed " . $stmt->error);
-
-        $result = $stmt->get_result();
-
-        $num_of_rows = $result->num_rows;
-        logger("Found " . $num_of_rows . " movies.");
-
-        $ret_array = array();
-        while ($row = $result->fetch_assoc()) {
-
-            // Create object and append to return array
-            $movie = Movie::CreateExistingMovieObj(
-                $row['m_ID'], $row['TITLE'], $row['STARTDATE'], $row['ENDDATE'],
-                $row['CINEMANAME'], $row['CATEGORY']);
-
-            $movie->favorite = isset($row['f_ID']);
-            $ret_array[] = $movie;
-        }
-
-        $stmt->free_result();
-        $stmt->close();
-
-        CloseCon($conn);
-
-        return $ret_array;
+//        $conn = OpenCon(true);
+//
+//        // Validate search input
+//        if (empty($title))
+//            $title = "%";
+//        else
+//            $title = "%".$title."%";
+//
+//        if (empty($cinema_name))
+//            $cinema_name = "%";
+//        else
+//            $cinema_name = "%".$cinema_name."%";
+//
+//        if (empty($category))
+//            $category = "%";
+//        else
+//            $category = "%".$category."%";
+//
+//        $doDateSearch = true;
+//        if (empty($date))
+//        {
+//            $date = "0000-00-00";
+//            $doDateSearch = false;
+//        }
+//
+//        logger("Date: " . $date);
+//        logger("doDateSearch: " . $doDateSearch);
+//
+//        $sql_str = "SELECT m.ID as m_ID,  m.TITLE, m.STARTDATE, m.ENDDATE, m.CINEMANAME, m.CATEGORY, f.ID as f_ID
+//                    FROM Movies m
+//                        LEFT JOIN Favorites f ON f.USERID = ? AND f.MOVIEID = m.ID
+//                    WHERE m.TITLE LIKE ? AND m.CINEMANAME LIKE ? AND m.CATEGORY LIKE ? AND ( ?=FALSE OR  (DATEDIFF(m.STARTDATE, ?) >= 0 AND  DATEDIFF(?, m.ENDDATE) >= 0));";
+//        $stmt = $conn->prepare($sql_str);
+//        $stmt->bind_param("ssssiss", $current_user_id, $title, $cinema_name, $category, $doDateSearch, $date, $date);
+//
+//        if (!$stmt->execute())
+//            logger("Get all movies failed " . $stmt->error);
+//
+//        $result = $stmt->get_result();
+//
+//        $num_of_rows = $result->num_rows;
+//        logger("Found " . $num_of_rows . " movies.");
+//
+//        $ret_array = array();
+//        while ($row = $result->fetch_assoc()) {
+//
+//            // Create object and append to return array
+//            $movie = Movie::CreateExistingMovieObj(
+//                $row['m_ID'], $row['TITLE'], $row['STARTDATE'], $row['ENDDATE'],
+//                $row['CINEMANAME'], $row['CATEGORY']);
+//
+//            $movie->favorite = isset($row['f_ID']);
+//            $ret_array[] = $movie;
+//        }
+//
+//        $stmt->free_result();
+//        $stmt->close();
+//
+//        CloseCon($conn);
+//
+//        return $ret_array;
     }
 
     public static function GetAllOwnerMovies(string $user_id):array
@@ -425,7 +426,7 @@ class Movie
             $i =0;
             foreach ($result as $cinema_doc)
             {
-                $movies[$i++] =  Movie::fromDocumentWithID($cinema_doc);
+                $movies[$i++] =  Movie::FromDocumentWithID($cinema_doc);
             }
             return $movies;
         }

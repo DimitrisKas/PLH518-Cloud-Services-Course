@@ -44,7 +44,7 @@ if (isset($_SESSION['login'])
         {
             ?>
             <tr id="movie_<?php echo $movie->id?>">
-                <td><div><input id="<?php echo $movie->id?>_favorite"   type="checkbox" <?php echo $movie->favorite ? "checked" : ""?> onclick="toggleFavorite('<?php echo $movie->id?>', this)"/></div></td>
+                <td><div><input id="<?php echo $movie->id?>_favorite"   type="checkbox" <?php echo $movie->isFavorite ? "checked" : ""?> onclick="toggleFavorite('<?php echo $movie->id?>', this)"/></div></td>
                 <td class="td-movie-title"><div><span id="<?php echo $movie->id?>_title"><?php echo $movie->title?></span></div></td>
                 <td><div><span id="<?php echo $movie->id?>_start_date"  ><?php echo $movie->start_date?></span></div></td>
                 <td><div><span id="<?php echo $movie->id?>_end_date"    ><?php echo $movie->end_date?></span></div></td>

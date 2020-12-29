@@ -320,7 +320,56 @@ $app->delete('/users/{u_id}/movies/{m_id}', function (Request $request, Response
 
 });
 
+/* =====================
+ *        FAVORITES
+ * ===================== */
 
+// Add /users/{u_id}/favorites
+// - Add a favorite movie to user
+$app->post('/users/{u_id}/favorites', function (Request $request, Response $response, $args) {
+
+    $u_id = $args['u_id'];
+
+    // Get all POST parameters
+    $params = (array)$request->getParsedBody();
+    $m_id = $params["movie_id"];
+    logger("\n --- At [POST] /users/".$u_id."/favorites");
+
+    $result = User::addFavorite($u_id, $m_id);
+
+    if ($result->success)
+    {
+        return $response->withStatus(201);
+    }
+    else
+    {
+        $response->getBody()->write($result->msg);
+        return $response->withStatus(403);
+    }
+
+});
+
+// Delete /users/{u_id}/favorites/{m_id}
+// - Delete a favorite movie from user
+$app->delete('/users/{u_id}/favorites/{m_id}', function (Request $request, Response $response, $args) {
+
+    $u_id = $args['u_id'];
+    $m_id = $args['m_id'];
+    logger("\n --- At [DELETE] /users/".$u_id."/favorites/".$m_id);
+
+    $result = User::removeFavorite($u_id, $m_id);
+
+    if ($result->success)
+    {
+        return $response->withStatus(204);
+    }
+    else
+    {
+        $response->getBody()->write($result->msg);
+        return $response->withStatus(403);
+    }
+
+});
 
 /* =====================
  *        LOGS/OTHER

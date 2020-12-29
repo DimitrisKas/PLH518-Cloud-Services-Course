@@ -77,7 +77,9 @@ else
     <div class="card">
         <h4>Manage Users</h4>
         <hr/>
-
+        <div id="popup-box-cont" class="f-success" hidden>
+            <p id="popup-box-text" ></p>
+        </div>
         <div  class="table-container">
             <div id="movies-container">
                 <table id="movies-table">
@@ -104,7 +106,7 @@ else
                     {
                         ?>
                         <tr id="movie_<?php echo $movie->id?>">
-                            <td><div><input id="<?php echo $movie->id?>_favorite"   type="checkbox" <?php echo $movie->favorite ? "checked" : ""?> onclick="toggleFavorite('<?php echo $movie->id?>', this)"/></div></td>
+                            <td><div><input id="<?php echo $movie->id?>_favorite"   type="checkbox" <?php echo $movie->isFavorite ? "checked" : ""?> onclick="toggleFavorite('<?php echo $movie->id?>', this)"/></div></td>
                             <td class="td-movie-title"><div><span id="<?php echo $movie->id?>_title"       ><?php echo $movie->title?></span></div></td>
                             <td><div><span id="<?php echo $movie->id?>_start_date"  ><?php echo $movie->start_date?></span></div></td>
                             <td><div><span id="<?php echo $movie->id?>_end_date"    ><?php echo $movie->end_date?></span></div></td>
@@ -134,6 +136,9 @@ else
 </div>
 </body>
 <script type="text/javascript">
+
+    document.getElementById("popup-box-cont").hidden = false;
+
     function getMovies(isSearching)
     {
         console.log("Searching...");
@@ -168,7 +173,7 @@ else
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                'isFavorite': checkbox.checked ? "true" : "false",
+                'addFavorite': checkbox.checked ? "true" : "false",
                 'movie_id' : movie_id
             })
         })
@@ -176,10 +181,34 @@ else
                 return response.json();
             })
             .then( success =>{
-                if (success) {
-                    getMovies(false);
-                }
+                showModal(success);
+                getMovies();
             });
+    }
+
+    function showModal(isSuccessful)
+    {
+        let text_obj = document.getElementById("popup-box-text");
+        let cont_obj = document.getElementById("popup-box-cont");
+        // document.getElementById("popup-box-cont").classList.remove("popup-hidden");
+
+        document.getElementById("popup-box-cont").classList.add("popup-show");
+
+        if (isSuccessful)
+        {
+            text_obj.innerText = "Success!";
+            cont_obj.classList.remove("f-warning");
+            cont_obj.classList.add("f-success");
+        }
+        else
+        {
+            text_obj.innerText = "An error occured!";
+            cont_obj.classList.remove("f-success");
+            cont_obj.classList.add("f-error");
+
+        }
+
+        setTimeout(function () { document.getElementById("popup-box-cont").classList.remove("popup-show");}, 2500);
     }
 </script>
 </html>

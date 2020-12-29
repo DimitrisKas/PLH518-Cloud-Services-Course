@@ -29,12 +29,12 @@ class User
 
     /** Wraper function for creating User objects through Document-like arrays.
      *  For Users without ID.
-     * @see CreateExistingUserObj
-     * @see fromDocumentWithID
      * @param $doc 'Document object that contains all User data
      * @return User Object with user Data
+     * @see CreateExistingUserObj
+     * @see FromDocumentWithID
      */
-    public static function fromDocument($doc): User
+    public static function FromDocument($doc): User
     {
         return new User(
                 $doc['name'], $doc['surname'], $doc['username'], $doc['password'],
@@ -44,12 +44,12 @@ class User
 
     /** Wraper function for creating User objects through Document-like arrays.
      *  For Users with ID.
-     * @see CreateExistingUserObj
-     * @see fromDocument
      * @param $doc 'Document object that contains all User data
      * @return User Object with user Data
+     * @see CreateExistingUserObj
+     * @see FromDocument
      */
-    public static function fromDocumentWithID($doc): User
+    public static function FromDocumentWithID($doc): User
     {
         return self::CreateExistingUserObj(
             $doc['id'], $doc['name'], $doc['surname'], $doc['username'], $doc['password'],
@@ -185,7 +185,7 @@ class User
             $i =0;
             foreach ($result as $user_doc)
             {
-                $users[$i++] =  User::fromDocumentWithID($user_doc);
+                $users[$i++] =  User::FromDocumentWithID($user_doc);
             }
             return array(true, $users, "");
         }
@@ -376,7 +376,7 @@ class User
         if ($http_code == 200)
         {
             logger("User succesfully logged in!");
-            $user = User::fromDocumentWithID(json_decode($result, true));
+            $user = User::FromDocumentWithID(json_decode($result, true));
             return array(true, $user, "");
         }
         else if ($http_code >= 400)
@@ -397,6 +397,95 @@ class User
         }
 
         return array(false, array(), "Undefined error");
+    }
+
+    public static function AddFavorite(string $user_id, string $movie_id)
+    {
+        logger("Trying to add favorite movie for user with id: " . $user_id);
+
+        $ch = curl_init();
+        $url = "http://db-service/users/".$user_id."/favorites";
+        $fields = [
+            'movie_id'  => $movie_id,
+        ];
+
+        $fields_string = http_build_query($fields);
+        logger("Fields String: " . $fields_string);
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_POST, true);
+        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+
+        // Execute post
+        logger("Sending Request... at ". $url);
+        $result = curl_exec($ch);
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+
+        // In case of error
+        $errno = curl_errno($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        // Parse results
+        if ($http_code == 201)
+            return true;
+
+        else if ($http_code >= 400)
+            logger("Favorite movie could not be added.");
+
+        else if ($errno == 6)
+            logger("Could not connect to db-service.");
+
+        else if ($errno != 0 )
+            logger("An error occured with cURL. \n
+                Error: ". $err . " .. errcode: " . $errno);
+
+        return false;
+    }
+
+    public static function DeleteFavorite(string $user_id, string $movie_id)
+    {
+        logger("Trying to delete favorite movie for user with id: " . $user_id);
+
+        $ch = curl_init();
+        $url = "http://db-service/users/".$user_id."/favorites/".$movie_id;
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_CUSTOMREQUEST, 'DELETE');
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+
+        // Execute post
+        logger("Sending Request... at ". $url);
+        $result = curl_exec($ch);
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+
+        // In case of error
+        $errno = curl_errno($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        // Parse results
+        if ($http_code == 204)
+            return true;
+
+        else if ($http_code >= 400)
+            logger("Favorite movie could not be deleted.");
+
+        else if ($errno == 6)
+            logger("Could not connect to db-service.");
+
+        else if ($errno != 0 )
+            logger("An error occured with cURL. \n
+                Error: ". $err . " .. errcode: " . $errno);
+
+        return false;
     }
 
 }

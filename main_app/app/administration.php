@@ -242,8 +242,8 @@ else
             })
             .then( text => {
                 let textarea = document.getElementById('temp-db-service');
-                textarea.scrollTop = textarea.scrollHeight;
                 textarea.innerHTML = text;
+                textarea.scrollTop = textarea.scrollHeight;
             })
     }
 
@@ -266,7 +266,6 @@ else
             text_obj.innerText = "An error occured!";
             cont_obj.classList.remove("f-success");
             cont_obj.classList.add("f-error");
-
         }
 
         setTimeout(function () { document.getElementById("popup-box-cont").classList.remove("popup-show");}, 2500);

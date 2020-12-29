@@ -6,6 +6,7 @@ use RestAPI\Result;
 use RestAPI\iRestObject;
 use Models\Generic\Movie;
 use MongoDB\BSON\ObjectId;
+use Slim\Exception\HttpMethodNotAllowedException;
 use function PHPUnit\Framework\containsEqual;
 
 
@@ -13,7 +14,7 @@ use function PHPUnit\Framework\containsEqual;
  * Class MovieM extends Generic Movie Class
  * @package Models\Mongo
  */
-class MovieM extends Movie implements iRestObject
+class MovieM extends Movie
 {
     public const COLL_NAME = "Movies";
 
@@ -31,13 +32,13 @@ class MovieM extends Movie implements iRestObject
         logger("Creating Movie... ");
 
         if ($obj instanceof Movie == false)
-            return Result::withLogMsg("Invalid Object argument given.", false);
+            return Result::withLogMsg(false, "Invalid Object argument given.");
 
         if (empty($obj->title))
-            return Result::withLogMsg("Title was empty.", false);
+            return Result::withLogMsg(false, "Title was empty.");
 
         if (empty($obj->cinema_name))
-            return Result::withLogMsg("Cinema Name was empty.", false);
+            return Result::withLogMsg(false, "Cinema Name was empty.");
 
         // Create New User
         $db = connect();
@@ -48,11 +49,11 @@ class MovieM extends Movie implements iRestObject
         {
             if ($insertResult->getInsertedCount() != 1)
             {
-                return Result::withLogMsg("Couldn't insert Movie with name: " . $obj->name, false);
+                return Result::withLogMsg(false, "Couldn't insert Movie with name: " . $obj->title);
             }
         }
 
-        return Result::withLogMsg("Movie ".$obj->title." at cinema ".$obj->cinema_name." successfully  created", true);
+        return Result::withLogMsg(true, "Movie ".$obj->title." at cinema ".$obj->cinema_name." successfully  created");
     }
 
     /**
@@ -137,7 +138,7 @@ class MovieM extends Movie implements iRestObject
     public static function updateOne(string $id, $obj): Result
     {
         if ($obj instanceof Movie == false)
-            return Result::withLogMsg("Invalid Object argument given.", false);
+            return Result::withLogMsg(false, "Invalid Object argument given.");
 
         logger("Editing Movie...");
         if (empty($id))
@@ -165,10 +166,10 @@ class MovieM extends Movie implements iRestObject
             logger("Matched Count: " . $updateResult->getMatchedCount());
             logger("Modified Count: " . $updateResult->getModifiedCount());
             if ($updateResult->getMatchedCount() != 1)
-                return Result::withLogMsg("Couldn't find Movie with id: " . $id, false);
+                return Result::withLogMsg(false, "Couldn't find Movie with id: " . $id);
 
             else if ($updateResult->getModifiedCount() != 1)
-                return Result::withLogMsg("Nothing to edit or couldn't edit Movie with id: " . $id, false);
+                return Result::withLogMsg(false, "Nothing to edit or couldn't edit Movie with id: " . $id);
         }
 
         return new Result("Success Editing Movie", true);
@@ -195,70 +196,132 @@ class MovieM extends Movie implements iRestObject
         {
             if ($deleteResult->getDeletedCount() != 1)
             {
-                return Result::withLogMsg("Couldn't find Movie with id: " . $id, false);
+                return Result::withLogMsg(false, "Couldn't find Movie with id: " . $id);
             }
         }
 
-        return Result::withLogMsg("", true);
+        return Result::withLogMsg(true, "");
     }
 
     /**
-     * Get all cinemas
-     * @return array An array with all cinemas as Cinema objects
+     * Get all Movies and tag the favorites of given user
+     * @param $user_id string User's id of which we want the favorites
+     * @return array An array with all movies as Movie objects
      */
-    public static function getAll(): array
-    {
-        $db = connect();
-        $cursor = $db
-            ->selectCollection(MovieM::COLL_NAME)
-            ->find();
-
-        $movies = array();
-        $i = 0;
-        foreach($cursor as $cinema_doc)
-        {
-            $movies[$i++] = new Movie($cinema_doc);
-        }
-
-        return $movies;
-    }
-
-    /**
-     * Get all current onwers cinemas
-     * @param string @owner Owner's id of whom we want to retrieve his movies
-     * @return array An array with all cinemas as Cinema objects
-     */
-    public static function getAllOwned(string $owner): array
+    public static function getAll($user_id): array
     {
         $db = connect();
         $cursor = $db
             ->selectCollection(MovieM::COLL_NAME)
             ->aggregate([
                 [
+                    '$addFields' => [
+                        'strID' => [
+                            '$toString'=> '$_id'
+                        ]
+                    ]
+                ],
+                [
                     '$lookup' => [
-                        'from' => CinemaM::COLL_NAME,
-                        'localField' => 'cinema_name',
-                        'foreignField' => 'name',
-                        'as' => 'cinema_info',
+                        'from' => UserM::COLL_NAME,
+                        'let' => [ 'm_id' => '$_id'],
+                        'pipeline' => [
+                            [
+                                '$match' => ['_id' => new ObjectId($user_id)]
+                            ],
+                            [
+                                '$unwind' => '$favorites'
+                            ],
+                            [
+                                '$project' => [
+                                    'favorites' => 1
+                                ]
+                            ],
+                            [
+                                '$match' => [
+                                    '$expr' => [
+                                        '$eq' => [
+                                            '$user.favorites',
+                                            '$strID'
+                                        ]
+                                    ]
+                                ]
+                            ],
+                        ],
+                        'as' => 'user'
+                    ]
+                ],
+                [
+                    '$addFields' => [
+                        'isFavorite' => [
+                            '$cond' => [
+                                'if' => [ '$in' => [ '$strID' , '$user.favorites' ]],
+                                'then' => 'true',
+                                'else' => 'false'
+                            ]
+                        ]
                     ]
                 ]
             ]);
-
-        logger("Results: " . var_export($cursor, true));
 
         $movies = array();
         $i = 0;
         foreach($cursor as $movie_doc)
         {
-            logger("Results[${i}]: " . var_export($movie_doc, true));
-
-            if (! ($movie_doc['cinema_info'][0]['owner'] == $owner))
-                continue;
-
             $movies[$i++] = new Movie($movie_doc);
         }
 
-//        logger("Results: " . var_export($movies, true));
+        return $movies;
+    }
+
+    /**
+     * Get all current onwer's Movies
+     * @param string @owner Owner's id of whom we want to retrieve his movies
+     * @return array An array with all cinemas as Movie objects
+     */
+    public static function getAllOwned(string $owner_id): array
+    {
+        $db = connect();
+        $cursor = $db
+            ->selectCollection(MovieM::COLL_NAME)
+            ->aggregate([
+
+                [
+                    '$lookup' => [
+                        'from' => CinemaM::COLL_NAME,
+                        'let' => [ 'c_name' => '$cinema_name'],
+                        'pipeline' => [
+                            [
+                                '$match' => [
+                                    '$expr' => [
+                                        '$and' => [
+                                            ['$eq' => [ '$name', '$$c_name' ]]
+                                        ]
+                                    ]
+                                ]
+                            ],
+                            [
+                                '$project' => ['owner' => 1]
+                            ]
+                        ],
+                        'as' => 'cinema_info',
+                    ]
+                ],
+                [
+                    '$match' => [
+                        'cinema_info.owner' => $owner_id
+                    ]
+                ],
+            ]);
+
+
+        $movies = array();
+        $i = 0;
+        foreach($cursor as $movie_doc)
+        {
+            $movies[$i++] = new Movie($movie_doc);
+        }
+
         return $movies;
     }
 

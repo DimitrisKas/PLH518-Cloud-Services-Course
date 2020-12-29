@@ -17,6 +17,8 @@ class User
     public string $role;
     public bool $confirmed;
 
+    public array $favorites;
+
     const ADMIN = "ADMIN";
     const CINEMAOWNER = "CINEMAOWNER";
     const USER = "USER";
@@ -51,6 +53,7 @@ class Movie
     public string $end_date;
     public string $cinema_name;
     public string $category;
+    public bool $isFavorite;
 
 
     /** Create Cinema object from document with cinema data
@@ -66,6 +69,12 @@ class Movie
         $this->start_date = $doc['start_date'];
         $this->end_date = $doc['end_date'];
         $this->category = $doc['category'];
+
+        if (isset($doc['isFavorite']))
+        {
+            logger(var_export($doc['isFavorite'],true));
+            $this->isFavorite = $doc['isFavorite'] == 'true';
+        }
     }
 }
 

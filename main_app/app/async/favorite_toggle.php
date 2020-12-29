@@ -7,9 +7,9 @@ include_once '../db_scripts/db_connection.php';
 include_once('../Utils/Random.php');
 include_once('../Utils/Logs.php');
 
-logger("-- In toggle Favorites");
+logger("-- In ADD/DELETE Favorite");
 
-// Check if User is logged in AND is an Admin
+// Check if User is logged in
 if (isset($_SESSION['login'])
     && $_SESSION['login'] === true)
 {
@@ -18,11 +18,14 @@ if (isset($_SESSION['login'])
     logger("Role: " . $_SESSION['user_role']);
 
     $data = json_decode(file_get_contents('php://input'), true);
-
     If (isset($data['movie_id']))
     {
-        logger($data['isFavorite']);
-        $success_flag = Favorite::ToggleFavorite($_SESSION['user_id'], $data['movie_id'], $data['isFavorite']);
+        logger("Is favorite: " .$data['addFavorite']);
+        if ($data['addFavorite'] == "true")
+            $success_flag = User::AddFavorite($_SESSION['user_id'], $data['movie_id']);
+        else
+            $success_flag = User::DeleteFavorite($_SESSION['user_id'], $data['movie_id']);
+
         echo json_encode($success_flag);
         exit();
     }
