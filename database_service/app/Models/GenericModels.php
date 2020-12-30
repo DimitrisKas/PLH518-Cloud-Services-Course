@@ -72,7 +72,6 @@ class Movie
 
         if (isset($doc['isFavorite']))
         {
-            logger(var_export($doc['isFavorite'],true));
             $this->isFavorite = $doc['isFavorite'] == 'true';
         }
     }

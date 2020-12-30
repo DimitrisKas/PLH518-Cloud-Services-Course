@@ -23,7 +23,7 @@ if (isset($_SESSION['login'])
 
     If (isset($data['movie_title']))
     {
-        $movie = new Movie($data['movie_title'],$data['movie_start_date'],$data['movie_end_date'],$data['movie_cinema_name'], $data['movie_category']);
+        $movie = new Movie($data['movie_title'],$data['movie_start_date'],$data['movie_end_date'],$data['movie_cinema_name'], $data['movie_category'], false);
         if ($movie->addToDB($_SESSION['user_id']))
             $success_flag = true;
         else

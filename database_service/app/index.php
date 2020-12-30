@@ -272,6 +272,24 @@ $app->get('/users/{u_id}/movies/all', function (Request $request, Response $resp
     return $response;
 });
 
+// POST /users/{u_id}/movies/search/{search_term}
+// - Search Movies based on search term
+$app->post('/users/{u_id}/movies/search', function (Request $request, Response $response, $args) {
+
+    $id = $args['u_id'];
+
+    // Get all POST parameters
+    $params = (array)$request->getParsedBody();
+
+    logger("\n --- At [GET] /users/".$id."/movies/search");
+    logger("Parameters: " . var_export($params, true));
+    $movies = Movie::getAll($id, $params);
+
+    $response->getBody()->write(json_encode($movies));
+    return $response;
+});
+
+
 
 
 // PUT /users/{u_id}/cinemas/{c_uid}/movies

@@ -293,7 +293,6 @@ class Movie
         {
             logger("Retrieved all movies for user with id ".$user_id);
             $result = json_decode($result, true);
-            logger("Movies: " . var_export($result,true));
 
             $movies = array();
             $i =0;
@@ -323,9 +322,9 @@ class Movie
         return array();
     }
 
-    public static function Search($current_user_id, $title, $date, $cinema_name, $category):array
+    public static function Search($user_id, $title, $date, $cinema_name, $category): array | bool
     {
-//        $conn = OpenCon(true);
+        $conn = OpenCon(true);
 //
 //        // Validate search input
 //        if (empty($title))
@@ -349,43 +348,70 @@ class Movie
 //            $date = "0000-00-00";
 //            $doDateSearch = false;
 //        }
-//
-//        logger("Date: " . $date);
-//        logger("doDateSearch: " . $doDateSearch);
-//
-//        $sql_str = "SELECT m.ID as m_ID,  m.TITLE, m.STARTDATE, m.ENDDATE, m.CINEMANAME, m.CATEGORY, f.ID as f_ID
-//                    FROM Movies m
-//                        LEFT JOIN Favorites f ON f.USERID = ? AND f.MOVIEID = m.ID
-//                    WHERE m.TITLE LIKE ? AND m.CINEMANAME LIKE ? AND m.CATEGORY LIKE ? AND ( ?=FALSE OR  (DATEDIFF(m.STARTDATE, ?) >= 0 AND  DATEDIFF(?, m.ENDDATE) >= 0));";
-//        $stmt = $conn->prepare($sql_str);
-//        $stmt->bind_param("ssssiss", $current_user_id, $title, $cinema_name, $category, $doDateSearch, $date, $date);
-//
-//        if (!$stmt->execute())
-//            logger("Get all movies failed " . $stmt->error);
-//
-//        $result = $stmt->get_result();
-//
-//        $num_of_rows = $result->num_rows;
-//        logger("Found " . $num_of_rows . " movies.");
-//
-//        $ret_array = array();
-//        while ($row = $result->fetch_assoc()) {
-//
-//            // Create object and append to return array
-//            $movie = Movie::CreateExistingMovieObj(
-//                $row['m_ID'], $row['TITLE'], $row['STARTDATE'], $row['ENDDATE'],
-//                $row['CINEMANAME'], $row['CATEGORY']);
-//
-//            $movie->favorite = isset($row['f_ID']);
-//            $ret_array[] = $movie;
-//        }
-//
-//        $stmt->free_result();
-//        $stmt->close();
-//
-//        CloseCon($conn);
-//
-//        return $ret_array;
+
+        $ch = curl_init();
+        $url = "http://db-service/users/".$user_id."/movies/search";
+        $fields = [
+            'title'   => $title,
+            'date'   => $date,
+            'cin_name'   => $cinema_name,
+            'cat'   => $category,
+        ];
+
+        $fields_string = http_build_query($fields);
+        logger("Fields String: " . $fields_string);
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_POST, true);
+        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+
+        // Execute post
+        logger("Sending Request...");
+        $result = curl_exec($ch);
+
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+
+        if ($http_code == 201 || $http_code == 200)
+        {
+
+            logger("Search successful!");
+            $result = json_decode($result, true);
+            logger("Movies: " . var_export($result,true));
+
+            if ($result == null)
+            {
+                logger("Nothing found!");
+                return array();
+            }
+
+            $movies = array();
+            $i =0;
+            foreach ($result as $movie_doc)
+            {
+                $movies[$i++] =  Movie::FromDocumentWithID($movie_doc);
+            }
+            return $movies;
+        }
+        else if ($http_code >= 400)
+        {
+            logger("Cinema was not created.");
+        }
+        else if (curl_errno($ch) == 6)
+        {
+            logger("Could not connect to db-service.");
+        }
+        else if (curl_errno($ch) != 0 )
+        {
+            logger("An error occured with cURL.");
+            logger("Error: ". curl_error($ch) . " .. errcode: " . curl_errno($ch));
+        }
+        curl_close($ch);
+
+        return false;
     }
 
     public static function GetAllOwnerMovies(string $user_id):array

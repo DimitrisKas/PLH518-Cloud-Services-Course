@@ -5,6 +5,7 @@ namespace Models\Mongo;
 use RestAPI\Result;
 use RestAPI\iRestObject;
 use Models\Generic\User;
+use Models\Generic\Cinema;
 use MongoDB\BSON\ObjectId;
 
 /**
@@ -186,8 +187,18 @@ class UserM extends User implements iRestObject {
         {
             return Result::withLogMsg(false, "Couldn't find user with id: " . $id, );
         }
-        else
-            return Result::withLogMsg(true, "" . $id, );
+
+        // Delete user's Cinemas (Movies of corresponding cinemas will also be deleted)
+        $cinemas = CinemaM::getAllOwned($id);
+
+        /** @var Cinema $cinema */
+        foreach($cinemas as $cinema)
+        {
+            CinemaM::deleteOne($cinema->id);
+        }
+
+
+        return Result::withLogMsg(true, "" . $id, );
 
     }
 

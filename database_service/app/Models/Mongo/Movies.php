@@ -3,11 +3,9 @@
 namespace Models\Mongo;
 
 use RestAPI\Result;
-use RestAPI\iRestObject;
 use Models\Generic\Movie;
+use Models\Generic\User;
 use MongoDB\BSON\ObjectId;
-use Slim\Exception\HttpMethodNotAllowedException;
-use function PHPUnit\Framework\containsEqual;
 
 
 /**
@@ -84,27 +82,13 @@ class MovieM extends Movie
 
     /**
      * Search for movies whose name is similar to the one given
-     * @param string $name Name to base search on
+     * @param string $user_id User's id of which we want the favorites
+     * @param array $params Search parameters to base search on
      * @return array Returns array of Movie objects if found, empty array otherwise
      */
-    public static function searchSimilarToName(string $name): array
+    public static function searchSimilarToName(string $user_id, array $params): array
     {
-        $db = connect();
-        $coll = $db->selectCollection(MovieM::COLL_NAME);
-        $cursor = $coll->find(
-            ['name' =>
-                ['$regex' => $name ]
-            ]);
-
-        $movies = array();
-        $i = 0;
-        foreach($cursor as $movie_doc)
-        {
-            $movies[$i++] = new Movie($movie_doc);
-        }
-
-        logger("Found ${i} Movies with the name: ${name}");
-        return $movies;
+        return self::getAll($user_id, $params);
     }
 
 
@@ -128,141 +112,124 @@ class MovieM extends Movie
         return new Movie($movie_doc);
     }
 
-
-    /**
-     * Update a single Movie based on Movie object given
-     * @param string $id Movie's ID
-     * @param Movie $obj Movie's data
-     * @return Result Result object with success boolean and a message
-     */
-    public static function updateOne(string $id, $obj): Result
-    {
-        if ($obj instanceof Movie == false)
-            return Result::withLogMsg(false, "Invalid Object argument given.");
-
-        logger("Editing Movie...");
-        if (empty($id))
-            return new Result("Empty id", false);
-
-        logger("With id: ". $id);
-
-        $db = connect();
-        $coll = $db->selectCollection(MovieM::COLL_NAME);
-        $updateResult = $coll->updateOne(
-            ['_id' => new ObjectId($id)],
-            ['$set'=> [
-                'title' => $obj->title,
-                'start_date' => $obj->start_date,
-                'end_date' => $obj->end_date,
-                'cinema_name' => $obj->cinema_name,
-                'category' => $obj->category,
-            ]]
-        );
-
-        logger("Movie to edit: ". var_export($obj, true));
-
-        if ($updateResult->isAcknowledged())
-        {
-            logger("Matched Count: " . $updateResult->getMatchedCount());
-            logger("Modified Count: " . $updateResult->getModifiedCount());
-            if ($updateResult->getMatchedCount() != 1)
-                return Result::withLogMsg(false, "Couldn't find Movie with id: " . $id);
-
-            else if ($updateResult->getModifiedCount() != 1)
-                return Result::withLogMsg(false, "Nothing to edit or couldn't edit Movie with id: " . $id);
-        }
-
-        return new Result("Success Editing Movie", true);
-
-    }
-
-    /**
-     * Delete a single Movie with given id
-     * @param string $id
-     * @return Result Result object with success boolean and a message
-     */
-    public static function deleteOne(string $id): Result
-    {
-        if (empty($id))
-            return new Result("Empty id", false);
-
-        $db = connect();
-        $coll = $db->selectCollection(MovieM::COLL_NAME);
-        $deleteResult = $coll->deleteOne([
-            '_id' => new ObjectId($id)
-        ]);
-
-        if ($deleteResult->isAcknowledged())
-        {
-            if ($deleteResult->getDeletedCount() != 1)
-            {
-                return Result::withLogMsg(false, "Couldn't find Movie with id: " . $id);
-            }
-        }
-
-        return Result::withLogMsg(true, "");
-    }
-
     /**
      * Get all Movies and tag the favorites of given user
-     * @param $user_id string User's id of which we want the favorites
+     * @param string $user_id  User's id of which we want the favorites
+     * @param array | null $search_term Optional parameter based on which to search for movies
      * @return array An array with all movies as Movie objects
      */
-    public static function getAll($user_id): array
+    public static function getAll(string $user_id, array $search_params = null): array
     {
+
         $db = connect();
-        $cursor = $db
-            ->selectCollection(MovieM::COLL_NAME)
-            ->aggregate([
-                [
-                    '$addFields' => [
-                        'strID' => [
-                            '$toString'=> '$_id'
-                        ]
+
+        $op_1 = ['$addFields' => [
+                    'strID' => [
+                        '$toString'=> '$_id'
                     ]
-                ],
-                [
-                    '$lookup' => [
-                        'from' => UserM::COLL_NAME,
-                        'let' => [ 'm_id' => '$_id'],
-                        'pipeline' => [
-                            [
-                                '$match' => ['_id' => new ObjectId($user_id)]
-                            ],
-                            [
-                                '$unwind' => '$favorites'
-                            ],
-                            [
-                                '$project' => [
-                                    'favorites' => 1
-                                ]
-                            ],
-                            [
-                                '$match' => [
-                                    '$expr' => [
-                                        '$eq' => [
-                                            '$user.favorites',
-                                            '$strID'
-                                        ]
+                ]
+            ];
+
+        $op_2 = ['$lookup' => [
+                    'from' => UserM::COLL_NAME,
+                    'let' => [ 'm_id' => '$_id'],
+                    'pipeline' => [
+                        [ '$match' => [
+                                '_id' => new ObjectId($user_id)
+                            ]
+                        ],
+                        ['$unwind' => '$favorites' ],
+                        ['$project' => [
+                                'favorites' => 1
+                            ]
+                        ],
+                        ['$match' => [
+                                '$expr' => [
+                                    '$eq' => [
+                                        '$user.favorites',
+                                        '$strID'
                                     ]
                                 ]
-                            ],
-                        ],
-                        'as' => 'user'
-                    ]
-                ],
-                [
-                    '$addFields' => [
-                        'isFavorite' => [
-                            '$cond' => [
-                                'if' => [ '$in' => [ '$strID' , '$user.favorites' ]],
-                                'then' => 'true',
-                                'else' => 'false'
                             ]
+                        ],
+                    ],
+                    'as' => 'user'
+                ]
+            ];
+
+        $op_3 = ['$addFields' => [
+                    'isFavorite' => [
+                        '$cond' => [
+                            'if' => [ '$in' => [ '$strID' , '$user.favorites' ]],
+                            'then' => 'true',
+                            'else' => 'false'
                         ]
                     ]
                 ]
-            ]);
+            ];
+
+        $coll = $db->selectCollection(MovieM::COLL_NAME);
+
+        if ( $search_params == null )
+        {
+            $cursor = $coll->aggregate([$op_1, $op_2, $op_3]);
+        }
+        else
+        {
+            logger("Searching!");
+            // Also searching for certain movies
+            $date = self::isSetAndNonEmpty($search_params, 'date');
+
+            if (empty($date))
+            {
+                $date = '0001-01-01';
+                $noDateSearch = true;
+            }
+            else
+            {
+                $noDateSearch = false;
+            }
+
+            $add_date_op = [
+                '$addFields' => [
+                    'dt_start' => [
+                        '$dateFromString'=> [
+                            'dateString' => '$start_date',
+                        ]
+                    ],
+                    'dt_end' =>[
+                        '$dateFromString'=> [
+                            'dateString' => '$end_date',
+                        ]
+                    ],
+                    'dt_search' =>[
+                        '$dateFromString'=> [
+                            'dateString' => $date
+                        ]
+                    ],
+                ]
+            ];
+
+            $search_op = [
+                '$match' => [
+                    'title' => ['$regex' => self::isSetAndNonEmpty($search_params, 'title')],
+                    'cinema_name' => ['$regex' => self::isSetAndNonEmpty($search_params, 'cin_name')],
+                    'category' => ['$regex' => self::isSetAndNonEmpty($search_params, 'cat')],
+                    '$expr' => [
+                        '$or' => [
+                            ['$eq' => [ ['$toBool' => 'true'], ['$toBool' => $noDateSearch] ]],
+                            [ '$and' => [
+                                ['$lte' => [ '$dt_start', '$dt_search']],
+                                ['$gte' => [ '$dt_end', '$dt_search']],
+                            ]]
+                        ]
+                    ]
+                ]
+            ];
+
+            $cursor = $coll->aggregate([$op_1, $op_2, $op_3, $add_date_op, $search_op]);
+        }
+
 
         $movies = array();
         $i = 0;
@@ -325,4 +292,106 @@ class MovieM extends Movie
         return $movies;
     }
 
+    /**
+     * Update a single Movie based on Movie object given
+     * @param string $id Movie's ID
+     * @param Movie $obj Movie's data
+     * @return Result Result object with success boolean and a message
+     */
+    public static function updateOne(string $id, $obj): Result
+    {
+        if ($obj instanceof Movie == false)
+            return Result::withLogMsg(false, "Invalid Object argument given.");
+
+        logger("Editing Movie...");
+        if (empty($id))
+            return new Result("Empty id", false);
+
+        logger("With id: ". $id);
+
+        $db = connect();
+        $coll = $db->selectCollection(MovieM::COLL_NAME);
+        $updateResult = $coll->updateOne(
+            ['_id' => new ObjectId($id)],
+            ['$set'=> [
+                'title' => $obj->title,
+                'start_date' => $obj->start_date,
+                'end_date' => $obj->end_date,
+                'cinema_name' => $obj->cinema_name,
+                'category' => $obj->category,
+            ]]
+        );
+
+        logger("Movie to edit: ". var_export($obj, true));
+
+        if ($updateResult->isAcknowledged())
+        {
+            logger("Matched Count: " . $updateResult->getMatchedCount());
+            logger("Modified Count: " . $updateResult->getModifiedCount());
+            if ($updateResult->getMatchedCount() != 1)
+                return Result::withLogMsg(false, "Couldn't find Movie with id: " . $id);
+
+            else if ($updateResult->getModifiedCount() != 1)
+                return Result::withLogMsg(false, "Nothing to edit or couldn't edit Movie with id: " . $id);
+        }
+
+        return new Result("Success Editing Movie", true);
+
+    }
+
+    /**
+     * Delete a single Movie with given id
+     * @param string $movie_id
+     * @return Result Result object with success boolean and a message
+     */
+    public static function deleteOne(string $movie_id): Result
+    {
+        if (empty($movie_id))
+            return new Result("Empty id", false);
+
+        $db = connect();
+        $coll = $db->selectCollection(MovieM::COLL_NAME);
+        $deleteResult = $coll->deleteOne([
+            '_id' => new ObjectId($movie_id)
+        ]);
+
+        if ($deleteResult->isAcknowledged())
+        {
+            if ($deleteResult->getDeletedCount() != 1)
+            {
+                return Result::withLogMsg(false, "Couldn't find Movie with id: " . $movie_id);
+            }
+        }
+
+        // Delete any favorite movies
+        $users = UserM::getAll();
+
+        /** @var User $user */
+        foreach ($users as $user)
+        {
+            UserM::removeFavorite($user->id, $movie_id);
+        }
+
+        return Result::withLogMsg(true, "");
+    }
+
+
+    /** Checks if $key in $arr is set and has non empty value
+     * @param array $arr Array to check key against
+     * @param string $key Key to check
+     * @return object|false Returns $arr[$key] value if it exists, false otherwise
+     */
+    public static function isSetAndNonEmpty(array $arr, string $key): mixed
+    {
+            if (isset($arr[$key]))
+            {
+                $value = $arr[$key];
+                if ( !empty($value) )
+                {
+                    return $value;
+                }
+            }
+
+            return "";
+    }
 }
