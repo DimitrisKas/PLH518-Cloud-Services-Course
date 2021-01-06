@@ -13,8 +13,13 @@ class User
     public bool $confirmed;
 
     const ADMIN = "ADMIN";
+    const ORG_ADMIN = "ADMINS";
+
     const CINEMAOWNER = "CINEMAOWNER";
+    const ORG_CINEMAOWNER = "CINEMAOWNERS";
+
     const USER = "USER";
+    const ORG_USER = "USERS";
 
     public function __construct($name, $surname, $username, $password, $email, $role, $confirmed)
     {
@@ -75,21 +80,164 @@ class User
         return $user;
     }
 
-    /** Add self to database
+    /** Register current user object to various services
      * @return bool Success boolean
      */
-    public function addToDB():bool
+    public function registerUser():bool
     {
         if (empty($this->username))
         {
-            logger("[USER_DB] Username was empty.");
+            logger("Username was empty.");
             return false;
         }
+
         if (empty($this->password))
         {
-            logger("[USER_DB] Password was empty.");
+            logger("Password was empty.");
             return false;
         }
+
+        if (empty($this->email))
+        {
+            $this->email = $this->username . "@test.com";
+        }
+
+        $keyrockSuccess =  $this->registerToKeyrock();
+
+        $mongoSuccess =  $this->registerToMongo();
+
+        // Return success only if both registers where successful
+        return $keyrockSuccess && $mongoSuccess;
+
+    }
+
+
+    private function registerToKeyrock(): bool
+    {
+        $KAPI = new KeyrockAPI();
+
+        logger("Registering user to Keyrock");
+
+        $ch = curl_init();
+        $url = "http://keyrock:3000/v1/users";
+        $fields = [
+            'user' => [
+                'username'  => $this->username,
+                'email'     => $this->email,
+                'password'  => $this->password,
+            ]
+        ];
+
+        $fields_string = json_encode($fields);
+        logger("Fields String: " . $fields_string);
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+        curl_setopt($ch,CURLOPT_POST, true);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            "Content-Type: application/json",
+            'X-Auth-token: '. $KAPI->GetAdminToken()
+        ));
+
+        // Execute post
+        logger("Sending Request...");
+        $result = curl_exec($ch);
+
+        logger("Response: ".var_export(json_decode($result),true));
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+
+        if ($http_code == 201)
+        {
+            logger("User succesfully created!");
+            curl_close($ch);
+
+            // Set role
+
+            $result =  json_decode($result, true);
+            $user_id = $result['user']['id'];
+
+            logger("Role: ".$this->role);
+            if ($this->role == self::ADMIN)
+            {
+                $success = $KAPI->AddUserToOrgByName($user_id, self::ORG_ADMIN, "owner");
+                $success = $success && $KAPI->AddUserToOrgByName($user_id, self::ORG_CINEMAOWNER, "owner");
+                $success = $success && $KAPI->AddUserToOrgByName($user_id, self::ORG_USER, "owner");
+            }
+            else if ($this->role == self::CINEMAOWNER)
+            {
+                $success = $KAPI->AddUserToOrgByName($user_id, self::ORG_CINEMAOWNER, "member");
+            }
+            else
+            {
+                $success = $KAPI->AddUserToOrgByName($user_id, self::ORG_USER, "member");
+            }
+
+            return $success;
+
+
+
+            // Set as disabled - DEPRECATED
+            // NOTE: For some reason, the api does not allow to set "enabled" to "false"
+            //       but allows to set it to "true" if it was already "false"
+//
+//            $ch = curl_init();
+//            $url = "http://keyrock:3000/v1/users/" . $id . "/enable";
+//
+//            curl_setopt($ch,CURLOPT_URL, $url);
+//            curl_setopt($ch,CURLOPT_POSTFIELDS, json_encode($fields));
+//            curl_setopt($ch,CURLOPT_CUSTOMREQUEST, 'PUT');
+//            curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+//            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+//                "Content-Type: application/json",
+//                'X-Auth-token: '. self::GetAdminToken()
+//            ));
+//
+//            $result = curl_exec($ch);
+//
+//            logger(var_export($result,true));
+//
+//            // Retrieve HTTP status code
+//            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+//
+//            if ($http_code == 200)
+//            {
+//                logger("User set to disabled");
+//                return true;
+//            }
+//            else
+//            {
+//                logger("Failed to disable user");
+//                return false;
+//            }
+
+
+        }
+        else if ($http_code >= 400)
+        {
+            logger("User was not created.");
+        }
+        else if (curl_errno($ch) == 6)
+        {
+            logger("Could not connect to keyrock service.");
+        }
+        else if (curl_errno($ch) != 0 )
+        {
+            logger("An error occured with cURL.");
+            logger("Error: ". curl_error($ch) . " .. errcode: " . curl_errno($ch));
+        }
+
+        curl_close($ch);
+
+        return false;
+    }
+
+    private function registerToMongo(): bool
+    {
+        logger("Registering user to MongoDB");
 
         $ch = curl_init();
         $url = "http://db-service/users";
@@ -342,6 +490,8 @@ class User
      */
     public static function LoginUser(string $username, string $password): array
     {
+
+        /// Deprecated
 
         $ch = curl_init();
         $url = "http://db-service/login";

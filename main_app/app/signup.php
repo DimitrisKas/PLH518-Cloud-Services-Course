@@ -1,6 +1,7 @@
 <?php
 include_once('db_scripts/Models/Users.php');
 include_once('db_scripts/db_connection.php');
+include_once('db_scripts/keyrock_api.php');
 include_once('Utils/Random.php');
 include_once('Utils/Logs.php');
 // File only with logic for signing up.
@@ -44,7 +45,7 @@ if (!empty($_POST))
         // Create User Object
         $user = new User($_POST['name'], $_POST['surname'],$_POST['username'],$_POST['password'], $_POST['email'],$_POST['role'], false);
 
-        if ($user->addToDB() === false)
+        if ($user->registerUser() === false)
         {
             logger("Error adding user.");
             $f_title = "Internal error while adding new user";

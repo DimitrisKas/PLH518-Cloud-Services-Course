@@ -7,6 +7,7 @@ include_once('db_scripts/create_db.php');
 include_once('db_scripts/create_tables.php');
 include_once('Utils/Random.php');
 include_once('Utils/Logs.php');
+include_once('db_scripts/keyrock_api.php');
 
 
 logger("-- In index: ");
@@ -15,6 +16,20 @@ logger("-- In index: ");
 $f_title = "";
 $f_text  = "";
 $isSigningUp = false;
+
+// Initialize organizations if they do not exist
+$KAPI = new KeyrockAPI();
+if ($KAPI->AreOrgsInitialized() == false)
+{
+    $KAPI->CreateOrganization("ADMINS",
+        "A group that contains all admins of this app");
+
+    $KAPI->CreateOrganization("CINEMAOWNERS",
+        "A group that contains all cinema owners that can add/edit/delete movies and cinemas");
+
+    $KAPI->CreateOrganization("USERS",
+        "A group that contains all the regular users of the app");
+}
 
 
 // Check if logging out
