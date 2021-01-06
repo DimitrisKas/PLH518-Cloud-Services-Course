@@ -13,18 +13,18 @@ services:
     networks:
       proj2-net:
   
-  mysql:
-    build:
-      context: './mysql'
-    restart: always
-    volumes:
-       - mysql-storage:/var/lib/mysql
-    ports: 
-      - 3306:3306
-    networks:
-      proj2-net:
-    environment:
-      MYSQL_ROOT_PASSWORD: 1234securePass
+#  mysql:
+#    build:
+#      context: './mysql'
+#    restart: always
+#    volumes:
+#       - mysql-storage:/var/lib/mysql
+#    ports:
+#      - 3306:3306
+#    networks:
+#      proj2-net:
+#    environment:
+#      MYSQL_ROOT_PASSWORD: 1234securePass
 
   # MySQL db management
   adminer:
@@ -71,8 +71,50 @@ services:
        ME_CONFIG_MONGODB_ADMINUSERNAME: root
        ME_CONFIG_MONGODB_ADMINPASSWORD: 1234securePass
 
-  # keyrock: // Keyrock IDM
-  #   image: "fiware/idm"
+  keyrock:
+    image: fiware/idm:7.6.0
+    container_name: fiware-keyrock
+    hostname: keyrock
+#    networks:
+#      default:
+#        ipv4_address: 172.18.1.5
+    depends_on:
+      - mysql-keyrock
+    ports:
+      - '3000:3000'
+      - '443:443'
+    networks:
+        proj2-net:
+    environment:
+      - DEBUG=idm:*
+      - IDM_DB_HOST=mysql-keyrock
+      - IDM_HOST=http://localhost:3000
+      - IDM_PORT=3000
+      - IDM_DB_PASS=secret
+      - IDM_DB_USER=root
+      - IDM_ADMIN_USER=admin
+      - IDM_ADMIN_EMAIL=admin@test.com
+      - IDM_ADMIN_PASS=1234
+
+  mysql-keyrock:
+    restart: always
+    image: mysql:5.7
+    hostname: mysql-keyrock
+    container_name: db-mysql-keyrock
+    expose:
+      - '3306'
+    ports:
+      - '3306:3306'
+    networks:
+        proj2-net:
+#    networks:
+#      default:
+#        ipv4_address: 172.18.1.6
+    environment:
+      - 'MYSQL_ROOT_PASSWORD=secret'
+#      - 'MYSQL_ROOT_HOST=172.18.1.5'
+    volumes:
+      - mysql-keyrock:/var/lib/mysql
   
   # ocb:    // Orion Context Broken
   #   image: "fiware/orion"
@@ -87,6 +129,7 @@ services:
 volumes:
   mysql-storage:
   mongo-storage:
+  mysql-keyrock:
 
 networks:
   proj2-net:

@@ -8,3 +8,5 @@ database_service/composer.*
 database_service/vendor/
 
 database_service/app/Utils/Logs/
+
+main_app/app/Utils/Logs/
