@@ -1,8 +1,12 @@
 
 <?php
 
+use KeyrockAPI as K_API;
+
 class User
 {
+
+    /** @var string Keyrock ID     */
     public string $id;
     public string $name;
     public string $surname;
@@ -240,17 +244,15 @@ class User
         logger("Registering user to MongoDB");
 
         $ch = curl_init();
-        $url = "http://db-service/users";
+        $url = "http://db-proxy:1027/users";
         $fields = [
+            'k_id' => $this->id,
             'username'  => $this->username,
+            'email'   => $this->email,
             'name'   => $this->name,
             'surname'   => $this->surname,
-            'password'   => $this->password,
-            'email'   => $this->email,
             'role'   => $this->role,
-            'confirmed'   => FALSE,
         ];
-
 
         $fields_string = http_build_query($fields);
         logger("Fields String: " . $fields_string);
@@ -260,11 +262,9 @@ class User
         curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
 
-
         // Execute post
         logger("Sending Request...");
         $result = curl_exec($ch);
-
 
         // Retrieve HTTP status code
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -303,11 +303,17 @@ class User
     {
         logger("Getting all users");
         $ch = curl_init();
-        $url = "http://db-service/users";
+        $url = "http://db-proxy:1027/users";
 
+        $token = K_API::GetAdminToken();
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            "Accept: application/json",
+            "Content-Type: application/json",
+            "X-Auth-Token: " . $token
+        ));
 
         // Execute post
         logger("Sending Request...");
@@ -321,7 +327,6 @@ class User
         $errno = curl_errno($ch);
         $err = curl_error($ch);
         curl_close($ch);
-
 
         // Parse results
         if ($http_code == 200)
@@ -385,15 +390,10 @@ class User
         $id = $data['user_id'];
 
         $ch = curl_init();
-        $url = "http://db-service/users/" . $id;
+        $url = "http://db-proxy:1027/users/" . $id;
         $fields = [
-            'username'  => $username,
-            'password'   => $password,
             'name'   => $name,
             'surname'   => $surname,
-            'email'   => $email,
-            'role'   => $role,
-            'confirmed'   => $isConfirmed,
         ];
 
         $fields_string = http_build_query($fields);
@@ -444,7 +444,7 @@ class User
         logger("Trying to delete user with id: " . $id);
 
         $ch = curl_init();
-        $url = "http://db-service/users/" . $id;
+        $url = "http://db-proxy:1027/users/" . $id;
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "DELETE");
@@ -484,69 +484,90 @@ class User
     /** Tries to login a user based on given Username and Password.
      * On Success, returns User model.
      * On Failure, returns NULL user model, along with reason of failure.
-     * @param $username string
+     * @param $email string
      * @param $password string
      * @return array(bool $success, User $user, string $errorMsg)
      */
-    public static function LoginUser(string $username, string $password): array
+    public static function LoginUser(string $email, string $password): array
     {
+        $token = K_API::GetUserToken($email, $password);
 
-        /// Deprecated
-
-        $ch = curl_init();
-        $url = "http://db-service/login";
-        $fields = [
-            'username'  => $username,
-            'password'   => $password,
-        ];
-
-        $fields_string = http_build_query($fields);
-        logger("Fields String: " . $fields_string);
-
-        curl_setopt($ch,CURLOPT_URL, $url);
-        curl_setopt($ch,CURLOPT_POST, true);
-        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
-        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
-
-        // Execute post
-        logger("Sending Request...");
-        $result = curl_exec($ch);
-
-        // Retrieve HTTP status code
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        logger("HTTP code: ". $http_code);
-
-        // In case of error
-        $errno = curl_errno($ch);
-        $err = curl_error($ch);
-        curl_close($ch);
-
-
-        // Parse results
-        if ($http_code == 200)
+        if ( empty($token) )
+        {
+            $msg = "Couldn't authenticate user";
+            logger($msg);
+            return array(false, null, $msg);
+        }
+        else
         {
             logger("User succesfully logged in!");
-            $user = User::FromDocumentWithID(json_decode($result, true));
+
+            // Get basic info from Keyrock
+            $ud = K_API::GetUserData($token);
+            $role = User::GetUserRole($ud['id']);
+
+            // Get extra info from DB service
+            $user = User::CreateExistingUserObj($ud['id'], "", "", $ud['username'], $password, $ud['email'], $role, true);
+
             return array(true, $user, "");
         }
-        else if ($http_code >= 400)
-        {
-            logger("User was not created.");
-            return array(false, array(), $result);
-        }
-        else if ($errno == 6)
-        {
-            logger("Could not connect to db-service.");
-            return array(false, array(), "Internal error");
-        }
-        else if ($errno != 0 )
-        {
-            logger("An error occured with cURL.");
-            logger("Error: ". $err . " .. errcode: " . $errno);
-            return array(false, array(), "Internal error");
-        }
 
-        return array(false, array(), "Undefined error");
+
+//        /// Deprecated
+//
+//        $ch = curl_init();
+//        $url = "http://db-proxy:1027/login";
+//        $fields = [
+//            'username'  => $username,
+//            'password'   => $password,
+//        ];
+//
+//        $fields_string = http_build_query($fields);
+//        logger("Fields String: " . $fields_string);
+//
+//        curl_setopt($ch,CURLOPT_URL, $url);
+//        curl_setopt($ch,CURLOPT_POST, true);
+//        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+//        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+//
+//        // Execute post
+//        logger("Sending Request...");
+//        $result = curl_exec($ch);
+//
+//        // Retrieve HTTP status code
+//        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+//        logger("HTTP code: ". $http_code);
+//
+//        // In case of error
+//        $errno = curl_errno($ch);
+//        $err = curl_error($ch);
+//        curl_close($ch);
+//
+//        // Parse results
+//        if ($http_code == 200)
+//        {
+//            logger("User succesfully logged in!");
+//            $user = User::FromDocumentWithID(json_decode($result, true));
+//            return array(true, $user, "");
+//        }
+//        else if ($http_code >= 400)
+//        {
+//            logger("User was not created.");
+//            return array(false, null, $result);
+//        }
+//        else if ($errno == 6)
+//        {
+//            logger("Could not connect to db-service.");
+//            return array(false, null, "Internal error");
+//        }
+//        else if ($errno != 0 )
+//        {
+//            logger("An error occured with cURL.");
+//            logger("Error: ". $err . " .. errcode: " . $errno);
+//            return array(false, null, "Internal error");
+//        }
+//
+//        return array(false, array(), "Undefined error");
     }
 
     public static function AddFavorite(string $user_id, string $movie_id)
@@ -554,7 +575,7 @@ class User
         logger("Trying to add favorite movie for user with id: " . $user_id);
 
         $ch = curl_init();
-        $url = "http://db-service/users/".$user_id."/favorites";
+        $url = "http://db-proxy:1027/users/".$user_id."/favorites";
         $fields = [
             'movie_id'  => $movie_id,
         ];
@@ -602,7 +623,7 @@ class User
         logger("Trying to delete favorite movie for user with id: " . $user_id);
 
         $ch = curl_init();
-        $url = "http://db-service/users/".$user_id."/favorites/".$movie_id;
+        $url = "http://db-proxy:1027/users/".$user_id."/favorites/".$movie_id;
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_CUSTOMREQUEST, 'DELETE');
@@ -636,6 +657,27 @@ class User
                 Error: ". $err . " .. errcode: " . $errno);
 
         return false;
+    }
+
+
+    public static function GetUserRole(string $user_id): string
+    {
+        if (K_API::GetUserRoleOnOrg($user_id, User::ORG_ADMIN) == "owner")
+        {
+            return User::ADMIN;
+        }
+        else if (K_API::GetUserRoleOnOrg($user_id, User::ORG_CINEMAOWNER) == "member")
+        {
+            return User::CINEMAOWNER;
+        }
+        else if (K_API::GetUserRoleOnOrg($user_id, User::ORG_USER) == "member")
+        {
+            return User::USER;
+        }
+
+        logger("Couldn't determine user's role");
+        // Fallback value in case of error
+        return User::USER;
     }
 
 }

@@ -5,10 +5,14 @@
  */
 class KeyrockAPI
 {
+    const CLIENT_ID = "09e67316-d0fa-490a-a2c9-58107a67cab8";
+    const CLIENT_S = "85e7189b-e535-47d9-90c1-333a9d12b3c9";
+
+
     /**
      * Create Organization based on given name and descr
      */
-    function CreateOrganization(string $org_name, string $org_descr): bool
+    static function CreateOrganization(string $org_name, string $org_descr): bool
     {
         logger("Creating ${org_name} organization");
         $ch = curl_init();
@@ -48,7 +52,7 @@ class KeyrockAPI
         }
     }
 
-    function AreOrgsInitialized()
+    static function AreOrgsInitialized()
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "http://keyrock:3000/v1/organizations");
@@ -56,7 +60,7 @@ class KeyrockAPI
         curl_setopt($ch, CURLOPT_HEADER, FALSE);
 
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            "X-Auth-token: ".$this->GetAdminToken()
+            "X-Auth-token: ".self::GetAdminToken()
         ));
 
         $response = curl_exec($ch);
@@ -68,7 +72,7 @@ class KeyrockAPI
         return count($response['organizations']) == 3;
     }
 
-    function AddUserToOrgByName(string $user_id, string $org_name, string $role): bool
+    static function AddUserToOrgByName(string $user_id, string $org_name, string $role): bool
     {
         logger("Adding user to org ${org_name}");
 
@@ -110,7 +114,7 @@ class KeyrockAPI
         }
     }
 
-    function RemoveUserFromOrgByName(string $user_id, string $org_name, string $prev_role): bool
+    static function RemoveUserFromOrgByName(string $user_id, string $org_name, string $prev_role): bool
     {
         logger("Removing user from org ${org_name}");
 
@@ -148,7 +152,7 @@ class KeyrockAPI
         }
     }
 
-    function GetUserRoleOnOrg(string $user_id, string $org_name): string
+    static function GetUserRoleOnOrg(string $user_id, string $org_name): string
     {
         logger("Getting user's role on org ${org_name}");
 
@@ -172,10 +176,9 @@ class KeyrockAPI
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if ($http_code == 201)
+        if ($http_code == 200)
         {
             logger("Success");
-
             $result = json_decode($result, true);
             return $result['organization_user']['role'];
         }
@@ -186,7 +189,7 @@ class KeyrockAPI
         }
     }
 
-    function GetOrgIDByName(string $org_name): string
+    static function GetOrgIDByName(string $org_name): string
     {
         $ch = curl_init();
         $url = "http://keyrock:3000/v1/organizations";
@@ -224,16 +227,22 @@ class KeyrockAPI
         }
     }
 
-    function GetAdminToken(): string
+    /**
+     * Retrieves user's access token based on his email and password
+     * @param string $email User's e-mail
+     * @param string $password User's password
+     * @return string User's token if authentication was successful
+     */
+    static function GetUserToken(string $email, string $password): string
     {
-        logger("Accessing admin's token");
+        logger("Getting user's ${email} token");
 
         $ch = curl_init();
         $url = "http://keyrock:3000/v1/auth/tokens";
 
         $fields = [
-            'name'  => 'admin@test.com',
-            'password'  => '1234',
+            'name'  => $email,
+            'password'  => $password,
         ];
 
         $fields_string = json_encode($fields);
@@ -256,20 +265,7 @@ class KeyrockAPI
         if (!empty($token))
             return $token;
 
-
-    //        $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-    //        $header = substr($response, 0, $header_size);
-    //        $body = substr($response, $header_size);
-    //
-    //        logger(var_export("Header: \n" . $header,true));
-    //        logger(var_export("Body: \n" . $body,true));
-    //
-    //        // Decode body
-    //        $body = json_decode($body);
-    //
-    //
-
-        // In case something went wrong
+        /* In case something went wrong */
 
         // Retrieve HTTP status code
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -294,7 +290,128 @@ class KeyrockAPI
         return false;
     }
 
-    function GetHeaderFromResponse(string $response, string $header_name): string
+    static function GetAdminToken(): string
+    {
+        return self::GetUserToken('admin@test.com', '1234');
+    }
+
+    static function GetUserOAuthToken(string $email, string $password): string
+    {
+        logger("Getting user's ${email} token");
+
+        $ch = curl_init();
+        $url = "http://keyrock:3000/oauth2/token";
+
+        $fields = [
+            'username'  => $email,
+            'password'  => $password,
+            'grant_type' => 'password'
+        ];
+
+        $fields_string = http_build_query($fields);
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_POST, TRUE);
+        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, TRUE);
+
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Accept: application/json',
+            "Authorization: Basic ". base64_encode(self::CLIENT_ID.":".self::CLIENT_S)
+        ));
+
+        $response = curl_exec($ch);
+        $response = json_decode($response);
+        curl_close($ch);
+
+        if (!empty($access_token))
+        {
+            $access_token = $response['access_token'];
+            $refresh_token = $response['refresh_token'];
+            $_SESSION['access_token'] = $access_token;
+            $_SESSION['refresh_token'] = $refresh_token;
+
+            return $access_token;
+        }
+
+        /* In case something went wrong */
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+
+        // In case of error
+        $errno = curl_errno($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        // Parse results
+        if ($http_code >= 400)
+            logger("Response error. Code: " . $http_code);
+
+        else if ($errno == 6)
+            logger("Could not connect to keyrock service.");
+
+        else if ($errno != 0 )
+            logger("An error occured with cURL.
+                    Error: ". $err . " .. errcode: " . $errno);
+
+        return false;
+    }
+
+    static function GetAdminOAuthToken(): string
+    {
+        return self::GetUserOAuthToken('admin@test.com', '1234');
+    }
+
+    static function GetUserData($user_token): array
+    {
+        logger("Getting user's data");
+
+        $ch = curl_init();
+        $url = "http://keyrock:3000/v1/auth/tokens";
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, TRUE);
+
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'X-Auth-token: '. self::GetAdminToken(),
+            'X-Subject-token: '. $user_token
+        ));
+
+        $response = curl_exec($ch);
+        $response = json_decode($response, true);
+        curl_close($ch);
+
+
+        if ( !empty($response['User']) )
+            return $response['User'];
+
+        /* In case something went wrong */
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+
+        // In case of error
+        $errno = curl_errno($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        // Parse results
+        if ($http_code >= 400)
+            logger("Response error. Code: " . $http_code);
+
+        else if ($errno == 6)
+            logger("Could not connect to keyrock service.");
+
+        else if ($errno != 0 )
+            logger("An error occured with cURL.\n\tError: ". $err . " .. errcode: " . $errno);
+
+        return array();
+    }
+
+    static function GetHeaderFromResponse(string $response, string $header_name): string
     {
         if (!preg_match_all('/'.$header_name.': (.*)\\r/', $response, $matches)
             || !isset($matches[1]))

@@ -8,6 +8,7 @@ include_once('Utils/Random.php');
 include_once('Utils/Logs.php');
 
 logger("-- In Welcome.php");
+
 if (isset($_SESSION['login']) && $_SESSION['login'] === true)
 {
     // User already logged in...
@@ -28,7 +29,7 @@ else
         $error = true;
     }
 
-    if ( $error )
+    if ( $error ) // Not enough credentials
     {
         $feedback = "true";
         $f_title = "Username or Password was empty";
@@ -47,7 +48,7 @@ else
         <?php
         exit();
     }
-    else
+    else // Try to login
     {
         list($wasSuccessful, $currentUser, $errorMsg) = User::LoginUser($_POST['username'], $_POST['password']);
 
