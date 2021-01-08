@@ -7,7 +7,7 @@ class User
 {
 
     /** @var string Keyrock ID     */
-    public string $id;
+    public string $k_id;
     public string $name;
     public string $surname;
     public string $username;
@@ -67,7 +67,7 @@ class User
     }
 
     /** Create a User object for User that already exists in Database. (i.e. has an ID)
-     * @param $id
+     * @param $k_id User's keystore id
      * @param $name
      * @param $surname
      * @param $username
@@ -77,12 +77,71 @@ class User
      * @param $confirmed
      * @return User Object of user with given data
      */
-    public static function CreateExistingUserObj($id, $name, $surname, $username, $password, $email, $role, $confirmed):User
+    public static function CreateExistingUserObj($k_id, $name, $surname, $username, $password, $email, $role, $confirmed):User
     {
         $user = new User($name, $surname, $username, $password, $email, $role, $confirmed);
-        $user->id = $id;
+        $user->k_id = $k_id;
         return $user;
     }
+
+    /** Returns all user data associated with given Keystore access token
+     * @param $token User's Access token from Keystore
+     * @return User | bool Returns User model with data. False on error
+     */
+    public static function GetFullUserDataFromToken($token): User | bool
+    {
+        // User data directly from keystore
+        $u_keystr = K_API::GetUserData($token);
+
+        if (empty($u_keystr))
+            return false;
+
+        // Extract user role from Keystore
+        $role = User::GetUserRole($u_keystr['id']);
+
+        // Get extra info from DB service (mongo database)
+        $u_mongo = User::GetUserFromDBService($u_keystr['id']);
+
+        return User::CreateExistingUserObj(
+            $u_keystr['id'],
+            $u_mongo['name'],
+            $u_mongo['surname'],
+            $u_keystr['username'],
+            "",
+            $u_keystr['email'],
+            $role,
+            true);
+    }
+
+    /** Returns all user data associated with given Keystore Retrieved User Data.
+     * @param $user_keystore_data User's Data that was retrieved from Keystore Service
+     * @return User | bool Returns User model with data. False on error
+     */
+    public static function GetFullUserDataFromKeystoreData($user_keystore_data): User | bool
+    {
+        // Use User data that has already been retrieved from keystore
+        $u_keystr = $user_keystore_data;
+
+        if (empty($u_keystr))
+            return false;
+
+        // Extract user role from Keystore
+        $role = User::GetUserRole($u_keystr['id']);
+
+        // Get extra info from DB service (mongo database)
+        $u_mongo = User::GetUserFromDBService($u_keystr['id']);
+
+        return User::CreateExistingUserObj(
+            $u_keystr['id'],
+            $u_mongo['name'],
+            $u_mongo['surname'],
+            $u_keystr['username'],
+            "",
+            $u_keystr['email'],
+            $role,
+            true);
+    }
+
 
     /** Register current user object to various services
      * @return bool Success boolean
@@ -106,16 +165,17 @@ class User
             $this->email = $this->username . "@test.com";
         }
 
-        $keyrockSuccess =  $this->registerToKeyrock();
-
-        $mongoSuccess =  $this->registerToMongo();
+        $keyrockSuccess = $this->registerToKeyrock();
+        $mongoSuccess = $this->registerToMongo();
 
         // Return success only if both registers where successful
         return $keyrockSuccess && $mongoSuccess;
 
     }
 
-
+    /** Registers User to Keyrock service
+     * @return bool Returns true on success, False on failure
+     */
     private function registerToKeyrock(): bool
     {
         $KAPI = new KeyrockAPI();
@@ -160,64 +220,26 @@ class User
             curl_close($ch);
 
             // Set role
-
             $result =  json_decode($result, true);
-            $user_id = $result['user']['id'];
+            $this->k_id = $result['user']['id'];
 
             logger("Role: ".$this->role);
             if ($this->role == self::ADMIN)
             {
-                $success = $KAPI->AddUserToOrgByName($user_id, self::ORG_ADMIN, "owner");
-                $success = $success && $KAPI->AddUserToOrgByName($user_id, self::ORG_CINEMAOWNER, "owner");
-                $success = $success && $KAPI->AddUserToOrgByName($user_id, self::ORG_USER, "owner");
+                $success = $KAPI->AddUserToOrgByName($this->k_id, self::ORG_ADMIN, "owner");
+                $success = $success && $KAPI->AddUserToOrgByName($this->k_id, self::ORG_CINEMAOWNER, "owner");
+                $success = $success && $KAPI->AddUserToOrgByName($this->k_id, self::ORG_USER, "owner");
             }
             else if ($this->role == self::CINEMAOWNER)
             {
-                $success = $KAPI->AddUserToOrgByName($user_id, self::ORG_CINEMAOWNER, "member");
+                $success = $KAPI->AddUserToOrgByName($this->k_id, self::ORG_CINEMAOWNER, "member");
             }
             else
             {
-                $success = $KAPI->AddUserToOrgByName($user_id, self::ORG_USER, "member");
+                $success = $KAPI->AddUserToOrgByName($this->k_id, self::ORG_USER, "member");
             }
 
             return $success;
-
-
-
-            // Set as disabled - DEPRECATED
-            // NOTE: For some reason, the api does not allow to set "enabled" to "false"
-            //       but allows to set it to "true" if it was already "false"
-//
-//            $ch = curl_init();
-//            $url = "http://keyrock:3000/v1/users/" . $id . "/enable";
-//
-//            curl_setopt($ch,CURLOPT_URL, $url);
-//            curl_setopt($ch,CURLOPT_POSTFIELDS, json_encode($fields));
-//            curl_setopt($ch,CURLOPT_CUSTOMREQUEST, 'PUT');
-//            curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
-//            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-//                "Content-Type: application/json",
-//                'X-Auth-token: '. self::GetAdminToken()
-//            ));
-//
-//            $result = curl_exec($ch);
-//
-//            logger(var_export($result,true));
-//
-//            // Retrieve HTTP status code
-//            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-//
-//            if ($http_code == 200)
-//            {
-//                logger("User set to disabled");
-//                return true;
-//            }
-//            else
-//            {
-//                logger("Failed to disable user");
-//                return false;
-//            }
-
 
         }
         else if ($http_code >= 400)
@@ -239,6 +261,9 @@ class User
         return false;
     }
 
+    /** Registers User to Database service (mongoDB)
+     * @return bool Returns true on success, False on failure
+     */
     private function registerToMongo(): bool
     {
         logger("Registering user to MongoDB");
@@ -246,7 +271,7 @@ class User
         $ch = curl_init();
         $url = "http://db-proxy:1027/users";
         $fields = [
-            'k_id' => $this->id,
+            'k_id' => $this->k_id,
             'username'  => $this->username,
             'email'   => $this->email,
             'name'   => $this->name,
@@ -261,6 +286,7 @@ class User
         curl_setopt($ch,CURLOPT_POST, true);
         curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
 
         // Execute post
         logger("Sending Request...");
@@ -295,25 +321,19 @@ class User
         return false;
     }
 
-
-    /** Gets all Users from the DB-Service
-     * @return array(bool $success, User $user, string $errorMsg)
+    /** Queries the Database service to retrieve available data for given User's Keystore id
+     * @param string $user_k_id User keystore ID
+     * @return array Returns document array containing User's data
      */
-    public static function GetAllUsers():array
+    public static function GetUserFromDBService(string $user_k_id): array
     {
-        logger("Getting all users");
+        logger("Getting user's data from DB Service based on token.");
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users";
-
-        $token = K_API::GetAdminToken();
+        $url = "http://db-proxy:1027/users/{$user_k_id}";
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            "Accept: application/json",
-            "Content-Type: application/json",
-            "X-Auth-Token: " . $token
-        ));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
 
         // Execute post
         logger("Sending Request...");
@@ -331,35 +351,55 @@ class User
         // Parse results
         if ($http_code == 200)
         {
-            logger("Retrieved all users");
+            logger("Retrieved user");
             $result = json_decode($result, true);
-
-            $users = array();
-            $i =0;
-            foreach ($result as $user_doc)
-            {
-                $users[$i++] =  User::FromDocumentWithID($user_doc);
-            }
-            return array(true, $users, "");
+            return $result;
         }
         else if ($http_code >= 400)
         {
-            logger("Users could not be retrieved");
-            return array(false, array(), $result);
+            logger("User could not be retrieved");
+            return array();
         }
         else if ($errno == 6)
         {
             logger("Could not connect to db-service.");
-            return array(false, array(), "Could not connect to Database Service");
+            return array();
         }
         else if ($errno != 0 )
         {
             logger("An error occured with cURL.");
             logger("Error: ". $err . " .. errcode: " . $errno);
-            return array(false, array(), "Internal Error: " . $err);
+            return array();
         }
 
-        return array(false, array(), "Undefined Error");
+        // Undefined error
+        return array();
+    }
+
+    /** Gets all Users from the DB-Service
+     * @return array(bool $success, User $user, string $errorMsg)
+     */
+    public static function GetAllUsers():array
+    {
+
+        list($success, $users_kstr, $msg) = K_API::GetAllUsers();
+
+        if ($success)
+        {
+            $users = array();
+            $i =0;
+            foreach ($users_kstr as $user_keystore_doc)
+            {
+                $users[$i++] = User::GetFullUserDataFromKeystoreData($user_keystore_doc);
+            }
+
+            return array($success, $users, "");
+        }
+        else
+        {
+            return array($success, $users_kstr, $msg);
+        }
+
     }
 
     /** Gets all Users from the DB-Service
@@ -403,6 +443,7 @@ class User
         curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "PUT");
         curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
 
         // Execute post
         logger("Sending Request...");
@@ -449,6 +490,7 @@ class User
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "DELETE");
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
 
         // Execute post
         logger("Sending Request... at ". $url);
@@ -501,73 +543,10 @@ class User
         else
         {
             logger("User succesfully logged in!");
-
-            // Get basic info from Keyrock
-            $ud = K_API::GetUserData($token);
-            $role = User::GetUserRole($ud['id']);
-
-            // Get extra info from DB service
-            $user = User::CreateExistingUserObj($ud['id'], "", "", $ud['username'], $password, $ud['email'], $role, true);
-
+            $user = User::GetFullUserDataFromToken($token);
             return array(true, $user, "");
         }
 
-
-//        /// Deprecated
-//
-//        $ch = curl_init();
-//        $url = "http://db-proxy:1027/login";
-//        $fields = [
-//            'username'  => $username,
-//            'password'   => $password,
-//        ];
-//
-//        $fields_string = http_build_query($fields);
-//        logger("Fields String: " . $fields_string);
-//
-//        curl_setopt($ch,CURLOPT_URL, $url);
-//        curl_setopt($ch,CURLOPT_POST, true);
-//        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
-//        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
-//
-//        // Execute post
-//        logger("Sending Request...");
-//        $result = curl_exec($ch);
-//
-//        // Retrieve HTTP status code
-//        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-//        logger("HTTP code: ". $http_code);
-//
-//        // In case of error
-//        $errno = curl_errno($ch);
-//        $err = curl_error($ch);
-//        curl_close($ch);
-//
-//        // Parse results
-//        if ($http_code == 200)
-//        {
-//            logger("User succesfully logged in!");
-//            $user = User::FromDocumentWithID(json_decode($result, true));
-//            return array(true, $user, "");
-//        }
-//        else if ($http_code >= 400)
-//        {
-//            logger("User was not created.");
-//            return array(false, null, $result);
-//        }
-//        else if ($errno == 6)
-//        {
-//            logger("Could not connect to db-service.");
-//            return array(false, null, "Internal error");
-//        }
-//        else if ($errno != 0 )
-//        {
-//            logger("An error occured with cURL.");
-//            logger("Error: ". $err . " .. errcode: " . $errno);
-//            return array(false, null, "Internal error");
-//        }
-//
-//        return array(false, array(), "Undefined error");
     }
 
     public static function AddFavorite(string $user_id, string $movie_id)
@@ -587,6 +566,7 @@ class User
         curl_setopt($ch,CURLOPT_POST, true);
         curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK));
 
         // Execute post
         logger("Sending Request... at ". $url);
@@ -618,16 +598,19 @@ class User
         return false;
     }
 
-    public static function DeleteFavorite(string $user_id, string $movie_id)
+    public static function DeleteFavorite(string $user_k_id, string $movie_id)
     {
-        logger("Trying to delete favorite movie for user with id: " . $user_id);
+        logger("Trying to delete favorite movie for user with id: " . $user_k_id);
 
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/".$user_id."/favorites/".$movie_id;
+        $url = "http://db-proxy:1027/users/".$user_k_id."/favorites/".$movie_id;
+
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_CUSTOMREQUEST, 'DELETE');
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK));
+
 
         // Execute post
         logger("Sending Request... at ". $url);
@@ -659,21 +642,20 @@ class User
         return false;
     }
 
-
-    public static function GetUserRole(string $user_id): string
+    /** Extract User's role (ADMIN/CINEMAOWNER/USER) based on Keystore organizations he is a member/owner of.
+     * @param string $user_k_id User's Keyrock id
+     * @return string User's role
+     */
+    public static function GetUserRole(string $user_k_id): string
     {
-        if (K_API::GetUserRoleOnOrg($user_id, User::ORG_ADMIN) == "owner")
-        {
+        if (K_API::GetUserRoleOnOrg($user_k_id, User::ORG_ADMIN) == "owner")
             return User::ADMIN;
-        }
-        else if (K_API::GetUserRoleOnOrg($user_id, User::ORG_CINEMAOWNER) == "member")
-        {
+
+        else if (K_API::GetUserRoleOnOrg($user_k_id, User::ORG_CINEMAOWNER) == "member")
             return User::CINEMAOWNER;
-        }
-        else if (K_API::GetUserRoleOnOrg($user_id, User::ORG_USER) == "member")
-        {
+
+        else if (K_API::GetUserRoleOnOrg($user_k_id, User::ORG_USER) == "member")
             return User::USER;
-        }
 
         logger("Couldn't determine user's role");
         // Fallback value in case of error

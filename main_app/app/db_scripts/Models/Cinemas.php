@@ -1,6 +1,8 @@
 
 <?php
 
+use KeyrockAPI as K_API;
+
 class Cinema
 {
     public string $id;
@@ -63,7 +65,7 @@ class Cinema
         }
 
         $ch = curl_init();
-        $url = "http://db-service/users/".$this->owner."/cinemas";
+        $url = "http://db-proxy:1027/users/".$this->owner."/cinemas";
         $fields = [
             'owner'   => $this->owner,
             'name'   => $this->name,
@@ -76,6 +78,7 @@ class Cinema
         curl_setopt($ch,CURLOPT_POST, true);
         curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch,CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
 
         // Execute post
         logger("Sending Request...");
@@ -123,10 +126,11 @@ class Cinema
         }
 
         $ch = curl_init();
-        $url = "http://db-service/users/".$owner_id."/cinemas";
+        $url = "http://db-proxy:1027/users/".$owner_id."/cinemas";
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch,CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
 
         // Execute post
         logger("Sending Request...");
@@ -192,7 +196,7 @@ class Cinema
         }
 
         $ch = curl_init();
-        $url = "http://db-service/users/".$owner_id."/cinemas/".$cinema_id;
+        $url = "http://db-proxy:1027/users/".$owner_id."/cinemas/".$cinema_id;
         $fields = [
             'name'   => $name,
         ];
@@ -204,6 +208,7 @@ class Cinema
         curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "PUT");
         curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch,CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
 
         // Execute post
         logger("Sending Request...");
@@ -260,11 +265,12 @@ class Cinema
         logger("Trying to delete cinema with id: " . $cinema_id);
 
         $ch = curl_init();
-        $url = "http://db-service/users/".$owner_id."/cinemas/".$cinema_id ;
+        $url = "http://db-proxy:1027/users/".$owner_id."/cinemas/".$cinema_id ;
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "DELETE");
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch,CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
 
         // Execute post
         logger("Sending Request... at ". $url);

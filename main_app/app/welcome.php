@@ -19,8 +19,8 @@ if (isset($_SESSION['login']) && $_SESSION['login'] === true)
 else
 {
     $error = false;
-    if (empty($_POST['username'])){
-        logger("Empty username...");
+    if (empty($_POST['email'])){
+        logger("Empty email...");
         $error = true;
     }
 
@@ -32,7 +32,7 @@ else
     if ( $error ) // Not enough credentials
     {
         $feedback = "true";
-        $f_title = "Username or Password was empty";
+        $f_title = "Email or Password was empty";
         $f_msg_count = 0;
         $f_color = "f-error";
         ?>
@@ -50,7 +50,7 @@ else
     }
     else // Try to login
     {
-        list($wasSuccessful, $currentUser, $errorMsg) = User::LoginUser($_POST['username'], $_POST['password']);
+        list($wasSuccessful, $currentUser, $errorMsg) = User::LoginUser($_POST['email'], $_POST['password']);
 
         if ($wasSuccessful == false)
         {
@@ -74,7 +74,7 @@ else
         }
         else
         {
-            $_SESSION['user_id'] = $currentUser->id;
+            $_SESSION['user_id'] = $currentUser->k_id;
             $_SESSION['user_username'] = $currentUser->username;
             $_SESSION['user_role'] = $currentUser->role;
             $_SESSION['user_email'] = $currentUser->email;

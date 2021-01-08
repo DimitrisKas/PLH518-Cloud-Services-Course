@@ -1,4 +1,5 @@
 <?php
+use KeyrockAPI as K_API;
 
 class Movie
 {
@@ -91,7 +92,7 @@ class Movie
         }
 
         $ch = curl_init();
-        $url = "http://db-service/users/".$user_id."/cinemas/".$this->cinema_name."/movies";
+        $url = "http://db-proxy:1027/users/".$user_id."/cinemas/".$this->cinema_name."/movies";
         $fields = [
             'title'   => $this->title,
             'start_date'   => $this->start_date,
@@ -107,6 +108,7 @@ class Movie
         curl_setopt($ch,CURLOPT_POST, true);
         curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch,CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
 
         // Execute post
         logger("Sending Request...");
@@ -157,7 +159,7 @@ class Movie
         }
 
         $ch = curl_init();
-        $url = "http://db-service/users/".$user_id."/movies/".$id;
+        $url = "http://db-proxy:1027/users/".$user_id."/movies/".$id;
         $fields = [
             'title' => $title,
             'start_date' => $start_date,
@@ -173,6 +175,7 @@ class Movie
         curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "PUT");
         curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch,CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
 
         // Execute post
         logger("Sending Request...");
@@ -223,11 +226,12 @@ class Movie
         logger("Trying to delete movie with id: " . $movie_id);
 
         $ch = curl_init();
-        $url = "http://db-service/users/".$owner_id."/movies/".$movie_id;
+        $url = "http://db-proxy:1027/users/".$owner_id."/movies/".$movie_id;
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "DELETE");
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch,CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
 
         // Execute post
         logger("Sending Request... at ". $url);
@@ -269,10 +273,11 @@ class Movie
         }
 
         $ch = curl_init();
-        $url = "http://db-service/users/".$user_id."/movies/all";
+        $url = "http://db-proxy:1027/users/".$user_id."/movies/all";
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch,CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
 
         // Execute post
         logger("Sending Request...");
@@ -324,33 +329,8 @@ class Movie
 
     public static function Search($user_id, $title, $date, $cinema_name, $category): array | bool
     {
-        $conn = OpenCon(true);
-//
-//        // Validate search input
-//        if (empty($title))
-//            $title = "%";
-//        else
-//            $title = "%".$title."%";
-//
-//        if (empty($cinema_name))
-//            $cinema_name = "%";
-//        else
-//            $cinema_name = "%".$cinema_name."%";
-//
-//        if (empty($category))
-//            $category = "%";
-//        else
-//            $category = "%".$category."%";
-//
-//        $doDateSearch = true;
-//        if (empty($date))
-//        {
-//            $date = "0000-00-00";
-//            $doDateSearch = false;
-//        }
-
         $ch = curl_init();
-        $url = "http://db-service/users/".$user_id."/movies/search";
+        $url = "http://db-proxy:1027/users/".$user_id."/movies/search";
         $fields = [
             'title'   => $title,
             'date'   => $date,
@@ -365,6 +345,7 @@ class Movie
         curl_setopt($ch,CURLOPT_POST, true);
         curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch,CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
 
         // Execute post
         logger("Sending Request...");
@@ -380,7 +361,6 @@ class Movie
 
             logger("Search successful!");
             $result = json_decode($result, true);
-            logger("Movies: " . var_export($result,true));
 
             if ($result == null)
             {
@@ -423,10 +403,11 @@ class Movie
         }
 
         $ch = curl_init();
-        $url = "http://db-service/users/".$user_id."/movies/owned";
+        $url = "http://db-proxy:1027/users/".$user_id."/movies/owned";
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch,CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
 
         // Execute post
         logger("Sending Request...");
@@ -440,7 +421,6 @@ class Movie
         $errno = curl_errno($ch);
         $err = curl_error($ch);
         curl_close($ch);
-
 
         // Parse results
         if ($http_code == 200)
