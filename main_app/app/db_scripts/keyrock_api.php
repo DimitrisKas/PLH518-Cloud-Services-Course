@@ -8,6 +8,8 @@ class KeyrockAPI
     const CLIENT_ID = "09e67316-d0fa-490a-a2c9-58107a67cab8";
     const CLIENT_S = "85e7189b-e535-47d9-90c1-333a9d12b3c9";
 
+    const WilmaMK = "123456";
+
 
     /**
      * Create Organization based on given name and descr
@@ -154,8 +156,6 @@ class KeyrockAPI
 
     static function GetUserRoleOnOrg(string $user_id, string $org_name): string
     {
-        logger("Getting user's role on org ${org_name}");
-
         $ch = curl_init();
 
         $org_id = self::GetOrgIDByName($org_name);
@@ -178,13 +178,11 @@ class KeyrockAPI
 
         if ($http_code == 200)
         {
-            logger("Success");
             $result = json_decode($result, true);
             return $result['organization_user']['role'];
         }
         else
         {
-            logger(var_export($result, true));
             return false;
         }
     }
@@ -235,7 +233,8 @@ class KeyrockAPI
      */
     static function GetUserToken(string $email, string $password): string
     {
-        logger("Getting user's ${email} token");
+        if ($email != "admin@test.com")
+            logger("Getting user's ${email} token");
 
         $ch = curl_init();
         $url = "http://keyrock:3000/v1/auth/tokens";
@@ -409,6 +408,56 @@ class KeyrockAPI
             logger("An error occured with cURL.\n\tError: ". $err . " .. errcode: " . $errno);
 
         return array();
+    }
+
+    static function GetAllUsers() {
+        logger("Getting all users from Keyrock");
+
+        $ch = curl_init();
+        $url = "http://keyrock:3000/v1/users";
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, TRUE);
+
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'X-Auth-token: '. self::GetAdminToken(),
+        ));
+
+        $response = curl_exec($ch);
+        $response = json_decode($response, true);
+        curl_close($ch);
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+
+        // In case of error
+        $errno = curl_errno($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        // Parse results
+        if ($http_code == 200)
+        {
+            logger("Retrieved all users from keyrock");
+            return array(true,  $response['users'], "");
+        }
+        else if ($http_code >= 400)
+        {
+            logger("Users could not be retrieved");
+            return array(false, array(), $response);
+        }
+        else if ($errno == 6)
+        {
+            logger("Could not connect to db-service.");
+            return array(false, array(), "Could not connect to Database Service");
+        }
+        else if ($errno != 0 )
+        {
+            logger("An error occured with cURL.");
+            logger("Error: ". $err . " .. errcode: " . $errno);
+            return array(false, array(), "Internal Error: " . $err);
+        }
     }
 
     static function GetHeaderFromResponse(string $response, string $header_name): string
