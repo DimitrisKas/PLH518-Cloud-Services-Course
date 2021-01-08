@@ -2,12 +2,10 @@
 session_start();
 
 include_once('db_scripts/Models/Users.php');
-include_once('db_scripts/drop_db.php');
-include_once('db_scripts/create_db.php');
-include_once('db_scripts/create_tables.php');
+include_once('db_scripts/keyrock_api.php');
 include_once('Utils/Random.php');
 include_once('Utils/Logs.php');
-include_once('db_scripts/keyrock_api.php');
+
 
 
 logger("-- In index: ");
@@ -106,8 +104,8 @@ if (!isset($_POST['f_color']))
         <div id="index-card-login" class="card" <?php echo ($isSigningUp ? "hidden":"")?>>
             <h3 class="text-color-dark">Log in</h3>
             <form action="./welcome.php" method="post" id="login-form" class="fl-col">
-                <label for="username_input">Username</label>
-                <input class="custom-input" type="text" id="username_input" name="username" placeholder="Username"/>
+                <label for="email_input">E-mail</label>
+                <input class="custom-input" type="text" id="email_input" name="email" placeholder="E-mail"/>
                 <label for="password_input">Password:</label>
                 <input class="custom-input" type="password" id="password_input"  name="password" placeholder="Password"/>
                 <input type="submit" value="Submit" class="btn-primary"/>

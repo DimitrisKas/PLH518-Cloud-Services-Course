@@ -78,7 +78,6 @@ if (!empty($_POST))
             <input type="hidden" name="name" value="<?php echo isset($_POST['name']) ? $_POST['name']: '' ?>">
             <input type="hidden" name="surname" value="<?php echo isset($_POST['surname']) ? $_POST['surname']: '' ?>">
             <input type="hidden" name="email" value="<?php echo isset($_POST['email']) ? $_POST['email']: '' ?>">
-            <
             <?php
         }
         else

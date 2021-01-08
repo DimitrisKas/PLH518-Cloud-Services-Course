@@ -365,7 +365,7 @@ class KeyrockAPI
 
     static function GetUserData($user_token): array
     {
-        logger("Getting user's data");
+        logger("Getting user's data from Keystore");
 
         $ch = curl_init();
         $url = "http://keyrock:3000/v1/auth/tokens";

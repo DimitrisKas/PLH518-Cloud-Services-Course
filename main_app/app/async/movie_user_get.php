@@ -34,7 +34,7 @@ if (isset($_SESSION['login'])
         {
             logger("Searching...");
             $movies = Movie::Search($_SESSION['user_id'], $_POST['title'], $_POST['date'], $_POST['cin_name'], $_POST['cat']);
-            if ( !isset($movies))
+            if ( !isset($movies) || empty($movies))
             {
                 echo "<h5>Error while searching</h5>";
                 exit(1);

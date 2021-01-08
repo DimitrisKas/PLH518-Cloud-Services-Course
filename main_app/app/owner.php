@@ -93,16 +93,15 @@ else
                 </tr>
 
                 <?php
-
                 $cinemas = Cinema::GetAllOwnerCinemas($_SESSION['user_id']);
                 /* @var $cinema Cinema (IDE type hint) */
                 foreach ($cinemas as $cinema)
                 {
                     ?>
                     <tr id="cinema_<?php echo $cinema->id?>">
-                        <td><div><input id="<?php echo $cinema->id?>_id"      type="text"  value="<?php echo $cinema->id?>"     class="disabled-input id-field" disabled/></div></td>
-                        <td><div><input id="<?php echo $cinema->id?>_name"    type="text"  value="<?php echo $cinema->name?>"   class="custom-input"/></div></td>
-                        <td><div><input id="<?php echo $cinema->id?>_owner"   type="text"  value="<?php echo $cinema->owner." (".$_SESSION['user_username'].")" ?>"  class="disabled-input owner-field" disabled/></div></td>
+                        <td><div><input id="<?php echo $cinema->id?>_id"      type="text"  value="<?php echo $cinema->id?>"    class="disabled-input id-field" disabled/></div></td>
+                        <td><div><input id="<?php echo $cinema->id?>_name"    type="text"  value="<?php echo $cinema->name?>"  class="custom-input"/></div></td>
+                        <td><div><input id="<?php echo $cinema->id?>_owner"   type="text"  value="<?php echo $cinema->owner?>" class="disabled-input owner-field" title="<?php echo $_SESSION['user_username']?>" disabled/></div></td>
                         <td class="action-td">
                             <div><button id="<?php echo $cinema->id?>_submit" class="btn-primary btn-success" onclick="submitCinema('<?php echo $cinema->id?>')" >Save</button></div>
                         </td>
@@ -119,7 +118,7 @@ else
                 <tr id="cinema_new" class="no-hover-row">
                     <td><div><input id="new_cinema_id"     class="disabled-input" type="text"  value="Auto Generated" disabled/></div></td>
                     <td><div><input id="new_cinema_name"   class="custom-input"   type="text"  value=""  placeholder="Enter Name"/></div></td>
-                    <td><div><input id="new_cinema_owner"  class="disabled-input owner-field" type="text"  value="<?php echo $_SESSION['user_id']." (".$_SESSION['user_username'].")" ?>" disabled/></div></td>
+                    <td><div><input id="new_cinema_owner"  class="disabled-input owner-field" type="text"  value="<?php echo $_SESSION['user_id'] ?>" title="<?php echo $_SESSION['user_username']?>" disabled/></div></td>
                     <td class="action-td">
                         <div><button id="new_cinema_submit" class="btn-primary btn-success" onclick="addCinema()" >Add</button></div>
                     </td>
@@ -156,7 +155,7 @@ else
                     {
                         ?>
                         <tr id="user_<?php echo $movie->id?>">
-                            <td><div><input id="<?php echo $movie->id?>_id"          type="text" value="<?php echo $movie->id?>"          class="disabled-input" disabled/></div></td>
+                            <td><div><input id="<?php echo $movie->id?>_id"          type="text" value="<?php echo $movie->id?>"          class="disabled-input id-field" disabled/></div></td>
                             <td><div><input id="<?php echo $movie->id?>_title"       type="text" value="<?php echo $movie->title?>"       class="custom-input"/></div></td>
                             <td><div><input id="<?php echo $movie->id?>_start_date"  type="date"  min="1997-01-01" max="2030-12-31" value="<?php echo $movie->start_date?>"  class="custom-input"/></div></td>
                             <td><div><input id="<?php echo $movie->id?>_end_date"    type="date"  min="1997-01-01" max="2030-12-31" value="<?php echo $movie->end_date?>"    class="custom-input"/></div></td>
