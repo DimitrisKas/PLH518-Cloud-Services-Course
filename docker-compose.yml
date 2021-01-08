@@ -74,15 +74,11 @@ services:
   keyrock:
     image: fiware/idm:7.6.0
     container_name: fiware-keyrock
-    hostname: keyrock
-#    networks:
-#      default:
-#        ipv4_address: 172.18.1.5
     depends_on:
       - mysql-keyrock
     ports:
-      - '3000:3000'
-      - '443:443'
+      - 3000:3000
+      - 443:443
     networks:
         proj2-net:
     environment:
@@ -99,10 +95,9 @@ services:
   mysql-keyrock:
     restart: always
     image: mysql:5.7
-    hostname: mysql-keyrock
     container_name: db-mysql-keyrock
     ports:
-      - '3306:3306'
+      - 3306:3306
     networks:
         proj2-net:
     environment:
@@ -119,31 +114,30 @@ services:
   
   db-proxy:
     image: fiware/pep-proxy
-    hostname: db-proxy
     depends_on:
       - keyrock
     deploy:
       restart_policy:
         condition: on-failure
     ports:
-      - '1027:1027'
+      - 1027:1027
     networks:
       proj2-net:
     environment:
-      - PEP_PROXY_APP_HOST=db-service
-      - PEP_PROXY_APP_PORT=9003
-      - PEP_PROXY_PORT=1027
-      - PEP_PROXY_IDM_HOST=keyrock
-      - PEP_PROXY_HTTPS_ENABLED=false
-      - PEP_PROXY_AUTH_ENABLED=false
-      - PEP_PROXY_IDM_SSL_ENABLED=false
-      - PEP_PROXY_IDM_PORT=3000
-      - PEP_PROXY_APP_ID=09e67316-d0fa-490a-a2c9-58107a67cab8
-      - PEP_PROXY_USERNAME=pep_proxy_e30a4575-25e1-43d4-8abf-b12452759d72
-      - PEP_PASSWORD=pep_proxy_796fbac3-8bcf-4f67-b4dd-1e0aa88a883a
-      - PEP_PROXY_PDP=idm
-      - PEP_PROXY_MAGIC_KEY=1234
-      - PEP_PROXY_PUBLIC_PATHS=/
+      - 'PEP_PROXY_APP_HOST=db-service'
+      - 'PEP_PROXY_APP_PORT=80'
+      - 'PEP_PROXY_PORT=1027'
+      - 'PEP_PROXY_IDM_HOST=keyrock'
+      - 'PEP_PROXY_HTTPS_ENABLED=false'
+      - 'PEP_PROXY_AUTH_ENABLED=false'
+      - 'PEP_PROXY_IDM_SSL_ENABLED=false'
+      - 'PEP_PROXY_IDM_PORT=3000'
+      - 'PEP_PROXY_APP_ID=09e67316-d0fa-490a-a2c9-58107a67cab8'
+      - 'PEP_PROXY_USERNAME=pep_proxy_e30a4575-25e1-43d4-8abf-b12452759d72'
+      - 'PEP_PASSWORD=pep_proxy_796fbac3-8bcf-4f67-b4dd-1e0aa88a883a'
+      - 'PEP_PROXY_PDP=idm'
+      - 'PEP_PROXY_MAGIC_KEY=123456'
+
 
 volumes:
   mysql-storage:
