@@ -15,9 +15,9 @@ class CinemaM extends Cinema implements iRestObject
 {
     public const COLL_NAME = "Cinemas";
 
-    public function __construct($doc, $owner)
+    public function __construct($doc, $owner_k_id)
     {
-        parent::__construct($doc, $owner);
+        parent::__construct($doc, $owner_k_id);
     }
 
     /** Adds Movie to database if name is unique
@@ -210,22 +210,23 @@ class CinemaM extends Cinema implements iRestObject
 
     /**
      * Get all current onwers cinemas
+     * @param string $owner_k_id Owners Keystore ID
      * @return array An array with all cinemas as Cinema objects
      */
-    public static function getAllOwned(string $owner): array
+    public static function getAllOwned(string $owner_k_id): array
     {
         $db = connect();
         $cursor = $db
             ->selectCollection(CinemaM::COLL_NAME)
             ->find([
-                'owner' => $owner
+                'owner' => $owner_k_id
             ]);
 
         $cinemas = array();
         $i = 0;
         foreach($cursor as $cinema_doc)
         {
-            $cinemas[$i++] = new Cinema($cinema_doc, $owner);
+            $cinemas[$i++] = new Cinema($cinema_doc, $owner_k_id);
         }
 
         return $cinemas;

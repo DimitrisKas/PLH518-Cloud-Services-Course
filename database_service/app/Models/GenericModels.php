@@ -8,15 +8,23 @@ namespace Models\Generic;
 
 class User
 {
+    /**
+     * @var string User's MongoDB ID (as string). Do not confuse with $k_id
+     */
     public string $id;
+
+    /**
+     * @var string User's Keystore ID. Do not confuse with $id
+     */
+    public string $k_id;
+
+    public string $username;
+    public string $email;
     public string $name;
     public string $surname;
-    public string $username;
-    public string $password;
-    public string $email;
     public string $role;
-    public bool $confirmed;
 
+    /** @var array Array that holds Mongo IDs to favorite movies  */
     public array $favorites;
 
     const ADMIN = "ADMIN";
@@ -30,17 +38,15 @@ class User
         if ( !empty($doc['_id']) )
             $this->id = $doc['_id']->__toString();
 
+        if ( !empty($doc['k_id']) )
+            $this->k_id = $doc['k_id'];
+
         $this->username = $doc['username'];
-        $this->password = $doc['password'];
+        $this->email = $doc['email'];
+
         $this->name = $doc['name'];
         $this->surname = $doc['surname'];
-        $this->email = $doc['email'];
         $this->role = $doc['role'];
-
-        if ( !empty($doc['confirmed']))
-            $this->confirmed = $doc['confirmed'] == '1';
-        else
-            $this->confirmed = false;
     }
 }
 
@@ -79,8 +85,17 @@ class Movie
 
 class Favorite
 {
+    /**
+     * @var string Current favorite unique ID
+     */
     public string $id;
+    /**
+     * @var string User's Keystore id
+     */
     public string $user_id;
+    /**
+     * @var string Movie's Mongo ID (as string)
+     */
     public string $movie_id;
 
 }
@@ -88,22 +103,25 @@ class Favorite
 class Cinema
 {
     public string $id;
+    /**
+     * @var string User's Keystore id that owns this cinema
+     */
     public string $owner;
     public string $name;
 
 
     /** Create Cinema object from document with cinema data
      * @param $doc array Document array with data
-     * @param $owner string optional owner id string
+     * @param $owner_k_id string optional owner id string.
      */
-    public function __construct($doc, $owner = null) {
+    public function __construct($doc, $owner_k_id = null) {
         if ( !empty($doc['_id']) )
             $this->id = $doc['_id']->__toString();
 
-        if ($owner == null)
+        if ($owner_k_id == null)
             $this->owner = $doc['owner'];
         else
-            $this->owner = $owner;
+            $this->owner = $owner_k_id;
 
         $this->name = $doc['name'];
     }

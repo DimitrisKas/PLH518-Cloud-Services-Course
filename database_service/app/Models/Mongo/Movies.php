@@ -82,13 +82,13 @@ class MovieM extends Movie
 
     /**
      * Search for movies whose name is similar to the one given
-     * @param string $user_id User's id of which we want the favorites
+     * @param string $user_k_id User's keystore id of which we want the favorites
      * @param array $params Search parameters to base search on
      * @return array Returns array of Movie objects if found, empty array otherwise
      */
-    public static function searchSimilarToName(string $user_id, array $params): array
+    public static function searchSimilarToName(string $user_k_id, array $params): array
     {
-        return self::getAll($user_id, $params);
+        return self::getAll($user_k_id, $params);
     }
 
 
@@ -114,11 +114,11 @@ class MovieM extends Movie
 
     /**
      * Get all Movies and tag the favorites of given user
-     * @param string $user_id  User's id of which we want the favorites
+     * @param string $user_k_id  User's id of which we want the favorites
      * @param array | null $search_term Optional parameter based on which to search for movies
      * @return array An array with all movies as Movie objects
      */
-    public static function getAll(string $user_id, array $search_params = null): array
+    public static function getAll(string $user_k_id, array $search_params = null): array
     {
 
         $db = connect();
@@ -135,7 +135,7 @@ class MovieM extends Movie
                     'let' => [ 'm_id' => '$_id'],
                     'pipeline' => [
                         [ '$match' => [
-                                '_id' => new ObjectId($user_id)
+                                'k_id' => $user_k_id
                             ]
                         ],
                         ['$unwind' => '$favorites' ],
@@ -243,10 +243,10 @@ class MovieM extends Movie
 
     /**
      * Get all current onwer's Movies
-     * @param string @owner Owner's id of whom we want to retrieve his movies
+     * @param string $owner_k_id Owner's keystore id of whom we want to retrieve his movies
      * @return array An array with all cinemas as Movie objects
      */
-    public static function getAllOwned(string $owner_id): array
+    public static function getAllOwned(string $owner_k_id): array
     {
         $db = connect();
         $cursor = $db
@@ -276,7 +276,7 @@ class MovieM extends Movie
                 ],
                 [
                     '$match' => [
-                        'cinema_info.owner' => $owner_id
+                        'cinema_info.owner' => $owner_k_id
                     ]
                 ],
             ]);
@@ -369,7 +369,7 @@ class MovieM extends Movie
         /** @var User $user */
         foreach ($users as $user)
         {
-            UserM::removeFavorite($user->id, $movie_id);
+            UserM::removeFavorite($user->k_id, $movie_id);
         }
 
         return Result::withLogMsg(true, "");

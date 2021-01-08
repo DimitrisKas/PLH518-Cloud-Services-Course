@@ -31,25 +31,25 @@ $app->addBodyParsingMiddleware();
  * ===================== */
 
 
-// POST /login
+// POST /login -- DEPRECATED
 // Login a user based on given POST parameters
-$app->post('/login', function (Request $request, Response $response, $args) {
-
-    logger("\n --- At [POST] /login");
-    $params = (array)$request->getParsedBody();
-    $result = User::Login($params['username'], $params['password']);
-
-    if ($result instanceof Result)
-    {
-        logger("Couldn't login user");
-        $response->getBody()->write($result->msg);
-        return $response->withStatus(401);
-    }
-    else
-        $response->getBody()->write(json_encode($result));
-
-    return $response;
-});
+//$app->post('/login', function (Request $request, Response $response, $args) {
+//
+//    logger("\n --- At [POST] /login");
+//    $params = (array)$request->getParsedBody();
+//    $result = User::Login($params['username'], $params['password']);
+//
+//    if ($result instanceof Result)
+//    {
+//        logger("Couldn't login user");
+//        $response->getBody()->write($result->msg);
+//        return $response->withStatus(401);
+//    }
+//    else
+//        $response->getBody()->write(json_encode($result));
+//
+//    return $response;
+//});
 
 // GET /users
 // - Retrieve all users' info
@@ -79,13 +79,18 @@ $app->post('/users', function (Request $request, Response $response, $args) {
         return $response->withStatus(400);
 });
 
-// GET /users/{id}
+// GET /users/{k_id}
 // - Retrieve SINGLE user's info
-$app->get('/users/{id}', function (Request $request, Response $response, $args) {
+$app->get('/users/{k_id}', function (Request $request, Response $response, $args) {
 
-    logger("\n --- At [GET] /users/{id}");
+    logger("\n --- At [GET] /users/{$args['k_id']}");
     // Get all POST parameters
+    $user = User::getOne($args['k_id']);
 
+    if (!empty($user))
+        logger("User found!");
+
+    $response->getBody()->write(json_encode($user));
     return $response;
 });
 
@@ -93,23 +98,22 @@ $app->get('/users/{id}', function (Request $request, Response $response, $args) 
 // - Search for user with given username (usernames are unique)
 $app->get('/users/search/{username}', function (Request $request, Response $response, $args) {
 
-    logger("\n --- At [GET] /users/search/{username} (Search User)");
+    logger("\n --- At [GET] /users/search/{$args['username']} (Search User)");
     $user = User::searchByUsername($args['username']);
 
     $response->getBody()->write($user->username . "\n");
-    $response->getBody()->write($user->password . "\n");
     $response->getBody()->write($user->role . "\n");
     return $response;
 });
 
-// PUT /users/{id}
+// PUT /users/{k_id}
 // - Edit user
-$app->put('/users/{id}', function (Request $request, Response $response, $args) {
+$app->put('/users/{k_id}', function (Request $request, Response $response, $args) {
 
-    logger("\n --- At [PUT] /users/{id} - (Edit User)");
+    logger("\n --- At [PUT] /users/{k_id} - (Edit User)");
     // Get all parameters
     $params = (array)$request->getParsedBody();
-    $res = User::updateOne($args['id'], new User($params));
+    $res = User::updateOne($args['k_id'], new User($params));
 
     if ($res->success == false)
         return $response->withStatus(401);
@@ -117,12 +121,12 @@ $app->put('/users/{id}', function (Request $request, Response $response, $args) 
     return $response->withStatus(204);
 });
 
-// DELETE /users/{id}
+// DELETE /users/{k_id}
 // - Delete user
-$app->delete('/users/{id}', function (Request $request, Response $response, $args) {
+$app->delete('/users/{k_id}', function (Request $request, Response $response, $args) {
 
-    logger("\n --- At [DELETE] /users/{id} - (Delete User)");
-    $res = User::deleteOne($args['id']);
+    logger("\n --- At [DELETE] /users/{k_id} - (Delete User)");
+    $res = User::deleteOne($args['k_id']);
 
     if ($res->success == false)
         return $response->withStatus(401);
@@ -148,30 +152,30 @@ $app->delete('/users/{id}', function (Request $request, Response $response, $arg
 //    return $response;
 //});
 
-// GET /users/{u_id}/cinemas
+// GET /users/{k_id}/cinemas
 // - Retrieve all users cinemas
-$app->get('/users/{u_id}/cinemas', function (Request $request, Response $response, $args) {
+$app->get('/users/{k_id}/cinemas', function (Request $request, Response $response, $args) {
 
-    $id = $args['u_id'];
-    logger("\n --- At [GET] /users/".$id."/cinemas");
-    $cinemas = Cinema::getAllOwned($id);
+    $k_id = $args['k_id'];
+    logger("\n --- At [GET] /users/".$k_id."/cinemas");
+    $cinemas = Cinema::getAllOwned($k_id);
 
     $response->getBody()->write(json_encode($cinemas));
     return $response;
 });
 
 
-// POST /users/{u_id}/cinemas
+// POST /users/{k_id}/cinemas
 // - Add cinema to user
-$app->post('/users/{u_id}/cinemas', function (Request $request, Response $response, $args) {
+$app->post('/users/{k_id}/cinemas', function (Request $request, Response $response, $args) {
 
-    $id = $args['u_id'];
-    logger("\n --- At [POST] /users/".$id."/cinemas");
+    $k_id = $args['k_id'];
+    logger("\n --- At [POST] /users/".$k_id."/cinemas");
 
     // Get all POST parameters
     $params = (array)$request->getParsedBody();
 
-    $result = Cinema::addOne(new Cinema($params, $id));
+    $result = Cinema::addOne(new Cinema($params, $k_id));
     if ($result->success)
     {
         return $response->withStatus(201);
@@ -184,17 +188,17 @@ $app->post('/users/{u_id}/cinemas', function (Request $request, Response $respon
 
 });
 
-// PUT /users/{u_id}/cinemas/{c_id}
+// PUT /users/{k_id}/cinemas/{c_id}
 // - Edit Cinema
-$app->put('/users/{u_id}/cinemas/{c_id}', function (Request $request, Response $response, $args) {
+$app->put('/users/{k_id}/cinemas/{c_id}', function (Request $request, Response $response, $args) {
 
-    $u_id = $args['u_id']; // User ID
+    $user_k_id = $args['k_id']; // User ID
     $c_id = $args['c_id']; // Cinema ID
     logger("\n --- At [PUT] /users/{id}/cinemas/{c_id} - (Edit Cinema)");
 
     // Get all parameters
     $params = (array)$request->getParsedBody();
-    $res = Cinema::updateOne($c_id, new Cinema($params, $u_id));
+    $res = Cinema::updateOne($c_id, new Cinema($params, $user_k_id));
 
     if ($res->success)
         return $response->withStatus(204);
@@ -202,11 +206,11 @@ $app->put('/users/{u_id}/cinemas/{c_id}', function (Request $request, Response $
     return $response->withStatus(401);
 });
 
-// DELETE /users/{u_id}/cinemas/{c_id}
+// DELETE /users/{k_id}/cinemas/{c_id}
 // - Delete Cinema
-$app->delete('/users/{u_id}/cinemas/{c_id}', function (Request $request, Response $response, $args) {
+$app->delete('/users/{k_id}/cinemas/{c_id}', function (Request $request, Response $response, $args) {
 
-    $u_id = $args['u_id']; // User ID
+    $user_k_id = $args['k_id']; // User ID
     $c_id = $args['c_id']; // Cinema ID
     logger("\n --- At [DELETE] /users/{id}/cinemas/{c_id} - (Delete Cinema)");
     $res = Cinema::deleteOne($c_id);
@@ -224,13 +228,13 @@ $app->delete('/users/{u_id}/cinemas/{c_id}', function (Request $request, Respons
  * ===================== */
 
 
-// POST /users/{u_id}/cinemas/{c_uid}/movies
+// POST /users/{k_id}/cinemas/{c_uid}/movies
 // - Add movie to cinema
-$app->post('/users/{u_id}/cinemas/{cinema_name}/movies', function (Request $request, Response $response, $args) {
+$app->post('/users/{k_id}/cinemas/{cinema_name}/movies', function (Request $request, Response $response, $args) {
 
-    $u_id = $args['u_id'];
+    $user_k_id = $args['k_id'];
     $cinema_name = $args['cinema_name'];
-    logger("\n --- At [POST] /users/".$u_id."/cinemas/".$cinema_name."/movies");
+    logger("\n --- At [POST] /users/".$user_k_id."/cinemas/".$cinema_name."/movies");
 
     // Get all POST parameters
     $params = (array)$request->getParsedBody();
@@ -248,43 +252,41 @@ $app->post('/users/{u_id}/cinemas/{cinema_name}/movies', function (Request $requ
 
 });
 
-// GET /users/{u_id}/movies/owned
+// GET /users/{k_id}/movies/owned
 // - Retrieve all users movies
-$app->get('/users/{u_id}/movies/owned', function (Request $request, Response $response, $args) {
+$app->get('/users/{k_id}/movies/owned', function (Request $request, Response $response, $args) {
 
-    $id = $args['u_id'];
-    logger("\n --- At [GET] /users/".$id."/movies/owned");
-    $movies = Movie::getAllOwned($id);
+    $user_k_id = $args['k_id'];
+    logger("\n --- At [GET] /users/".$user_k_id."/movies/owned");
+    $movies = Movie::getAllOwned($user_k_id);
 
     $response->getBody()->write(json_encode($movies));
     return $response;
 });
 
-// GET /users/{u_id}/movies/all
+// GET /users/{k_id}/movies/all
 // - Retrieve all users movies
-$app->get('/users/{u_id}/movies/all', function (Request $request, Response $response, $args) {
+$app->get('/users/{k_id}/movies/all', function (Request $request, Response $response, $args) {
 
-    $id = $args['u_id'];
-    logger("\n --- At [GET] /users/".$id."/movies/all");
-    $movies = Movie::getAll($id);
+    $user_k_id = $args['k_id'];
+    logger("\n --- At [GET] /users/".$user_k_id."/movies/all");
+    $movies = Movie::getAll($user_k_id);
 
     $response->getBody()->write(json_encode($movies));
     return $response;
 });
 
-// POST /users/{u_id}/movies/search/{search_term}
+// POST /users/{k_id}/movies/search/{search_term}
 // - Search Movies based on search term
-$app->post('/users/{u_id}/movies/search', function (Request $request, Response $response, $args) {
+$app->post('/users/{k_id}/movies/search', function (Request $request, Response $response, $args) {
 
-    $id = $args['u_id'];
+    $user_k_id = $args['k_id'];
 
     // Get all POST parameters
     $params = (array)$request->getParsedBody();
 
-    logger("\n --- At [GET] /users/".$id."/movies/search");
-    logger("Parameters: " . var_export($params, true));
-    $movies = Movie::getAll($id, $params);
-
+    logger("\n --- At [GET] /users/".$user_k_id."/movies/search");
+    $movies = Movie::getAll($user_k_id, $params);
     $response->getBody()->write(json_encode($movies));
     return $response;
 });
@@ -292,13 +294,13 @@ $app->post('/users/{u_id}/movies/search', function (Request $request, Response $
 
 
 
-// PUT /users/{u_id}/cinemas/{c_uid}/movies
+// PUT /users/{k_id}/cinemas/{c_uid}/movies
 // - Edit movie
-$app->put('/users/{u_id}/movies/{m_id}', function (Request $request, Response $response, $args) {
+$app->put('/users/{k_id}/movies/{m_id}', function (Request $request, Response $response, $args) {
 
-    $u_id = $args['u_id'];
+    $user_k_id = $args['k_id'];
     $m_id = $args['m_id'];
-    logger("\n --- At [PUT] /users/".$u_id."/movies/".$m_id);
+    logger("\n --- At [PUT] /users/".$user_k_id."/movies/".$m_id);
 
     // Get all POST parameters
     $params = (array)$request->getParsedBody();
@@ -316,13 +318,13 @@ $app->put('/users/{u_id}/movies/{m_id}', function (Request $request, Response $r
 
 });
 
-// Delete /users/{u_id}/movies/{m_id}
+// Delete /users/{k_id}/movies/{m_id}
 // - Delete a movie
-$app->delete('/users/{u_id}/movies/{m_id}', function (Request $request, Response $response, $args) {
+$app->delete('/users/{k_id}/movies/{m_id}', function (Request $request, Response $response, $args) {
 
-    $u_id = $args['u_id'];
+    $user_k_id = $args['k_id'];
     $m_id = $args['m_id'];
-    logger("\n --- At [DELETE] /users/".$u_id."/movies/".$m_id);
+    logger("\n --- At [DELETE] /users/".$user_k_id."/movies/".$m_id);
 
     $result = Movie::deleteOne($m_id);
 
@@ -342,18 +344,18 @@ $app->delete('/users/{u_id}/movies/{m_id}', function (Request $request, Response
  *        FAVORITES
  * ===================== */
 
-// Add /users/{u_id}/favorites
+// Add /users/{k_id}/favorites
 // - Add a favorite movie to user
-$app->post('/users/{u_id}/favorites', function (Request $request, Response $response, $args) {
+$app->post('/users/{k_id}/favorites', function (Request $request, Response $response, $args) {
 
-    $u_id = $args['u_id'];
+    $user_k_id = $args['k_id'];
 
     // Get all POST parameters
     $params = (array)$request->getParsedBody();
     $m_id = $params["movie_id"];
-    logger("\n --- At [POST] /users/".$u_id."/favorites");
+    logger("\n --- At [POST] /users/".$user_k_id."/favorites");
 
-    $result = User::addFavorite($u_id, $m_id);
+    $result = User::addFavorite($user_k_id, $m_id);
 
     if ($result->success)
     {
@@ -367,15 +369,15 @@ $app->post('/users/{u_id}/favorites', function (Request $request, Response $resp
 
 });
 
-// Delete /users/{u_id}/favorites/{m_id}
+// Delete /users/{k_id}/favorites/{m_id}
 // - Delete a favorite movie from user
-$app->delete('/users/{u_id}/favorites/{m_id}', function (Request $request, Response $response, $args) {
+$app->delete('/users/{k_id}/favorites/{m_id}', function (Request $request, Response $response, $args) {
 
-    $u_id = $args['u_id'];
+    $user_k_id = $args['k_id'];
     $m_id = $args['m_id'];
-    logger("\n --- At [DELETE] /users/".$u_id."/favorites/".$m_id);
+    logger("\n --- At [DELETE] /users/".$user_k_id."/favorites/".$m_id);
 
-    $result = User::removeFavorite($u_id, $m_id);
+    $result = User::removeFavorite($user_k_id, $m_id);
 
     if ($result->success)
     {
