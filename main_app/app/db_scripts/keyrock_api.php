@@ -141,7 +141,7 @@ class KeyrockAPI
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if ($http_code == 201)
+        if ($http_code == 204)
         {
             logger("Removed user ${user_id} from ${org_name}");
             return true;
@@ -363,7 +363,11 @@ class KeyrockAPI
         return self::GetUserOAuthToken('admin@test.com', '1234');
     }
 
-    static function GetUserData($user_token): array
+    /** Get User Data from keyrock service based on his access token
+     * @param $user_token
+     * @return array
+     */
+    static function GetUserDataBasedOnToken($user_token): array
     {
         logger("Getting user's data from Keyrock");
 
@@ -382,11 +386,52 @@ class KeyrockAPI
         $response = json_decode($response, true);
         curl_close($ch);
 
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
 
-        if ( !empty($response['User']) )
+        // In case of error
+        $errno = curl_errno($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        // Parse results
+        if ($http_code == 200)
             return $response['User'];
 
-        /* In case something went wrong */
+        else if ($http_code >= 400)
+            logger("Response error. Code: " . $http_code);
+
+        else if ($errno == 6)
+            logger("Could not connect to keyrock service.");
+
+        else if ($errno != 0 )
+            logger("An error occured with cURL.\n\tError: ". $err . " .. errcode: " . $errno);
+
+        return array();
+    }
+
+    /** Get User Data from keyrock service based on his keyrock id
+     * @param $user_id
+     * @return array
+     */
+    static function GetUserDataBasedOnID($user_id): array
+    {
+        logger("Getting user's data from Keyrock");
+
+        $ch = curl_init();
+        $url = "http://keyrock:3000/v1/users/{$user_id}";
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, TRUE);
+
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'X-Auth-token: '. self::GetAdminToken(),
+        ));
+
+        $response = curl_exec($ch);
+        $response = json_decode($response, true);
+        curl_close($ch);
 
         // Retrieve HTTP status code
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -398,7 +443,10 @@ class KeyrockAPI
         curl_close($ch);
 
         // Parse results
-        if ($http_code >= 400)
+        if ($http_code == 200)
+            return $response['User'];
+
+        else if ($http_code >= 400)
             logger("Response error. Code: " . $http_code);
 
         else if ($errno == 6)
@@ -458,6 +506,119 @@ class KeyrockAPI
             logger("Error: ". $err . " .. errcode: " . $errno);
             return array(false, array(), "Internal Error: " . $err);
         }
+    }
+
+
+    /** Update a Users username, email and/or password on Keyrock service. (Not his role)
+     * @param User $new_user_data
+     * @return bool Success bool
+     */
+    static function EditUser(User $new_user_data): bool {
+
+        $ch = curl_init();
+        $url = "http://keyrock:3000/v1/users/{$new_user_data->k_id}";
+
+        $fields = [
+            'user' => [
+                'username'  => $new_user_data->username,
+                'email'     => $new_user_data->email,
+            ]
+        ];
+
+        if ( !empty($new_user_data->password) )
+        {
+            $fields['user']['password'] = $new_user_data->password;
+        }
+
+        $fields_string = json_encode($fields);
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+        curl_setopt($ch,CURLOPT_CUSTOMREQUEST, 'PATCH');
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            "Content-Type: application/json",
+            'X-Auth-token: '. self::GetAdminToken()
+        ));
+
+        // Execute post
+        logger("Sending Request...");
+        $result = curl_exec($ch);
+
+        logger("Response: ".var_export(json_decode($result),true));
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+
+        if ($http_code == 200)
+        {
+            logger("User succesfully edited!");
+            curl_close($ch);
+            return true;
+
+        }
+        else if ($http_code >= 400)
+        {
+            logger("User was not edited.");
+        }
+        else if (curl_errno($ch) == 6)
+        {
+            logger("Could not connect to keyrock service.");
+        }
+        else if (curl_errno($ch) != 0 )
+        {
+            logger("An error occured with cURL.");
+            logger("Error: ". curl_error($ch) . " .. errcode: " . curl_errno($ch));
+        }
+
+        curl_close($ch);
+        return false;
+    }
+
+    /** Delete's user from keyrock service based on his id
+     * @param $user_id User's Keyrock ID
+     * @return bool
+     */
+    static function DeleteUser(string $user_id): bool
+    {
+        logger("Deleting user with id {$user_id} from keyrock");
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, "http://keyrock:3000/v1/users/user_id");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+        curl_setopt($ch, CURLOPT_HEADER, FALSE);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            "X-Auth-token: " . self::GetAdminToken()
+        ));
+
+        $response = curl_exec($ch);
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+
+        // In case of error
+        $errno = curl_errno($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        // Parse results
+        if ($http_code == 204)
+            return true;
+
+        else if ($http_code >= 400)
+            logger("Response error. Code: " . $http_code);
+
+        else if ($errno == 6)
+            logger("Could not connect to keyrock service.");
+
+        else if ($errno != 0 )
+            logger("An error occured with cURL.\n\tError: ". $err . " .. errcode: " . $errno);
+
+        return false;
     }
 
     static function GetHeaderFromResponse(string $response, string $header_name): string

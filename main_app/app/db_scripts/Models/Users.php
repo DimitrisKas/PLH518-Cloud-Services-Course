@@ -88,12 +88,12 @@ class User
      * @param $token User's Access token from Keyrock
      * @return User | bool Returns User model with data. False on error
      */
-    public static function GetFullUserDataFromToken($token): User | bool
+    public static function GetFullUserDataBasedOnToken($token): User | bool
     {
         // User data directly from keyrock
-        $u_keystr = K_API::GetUserData($token);
+        $u_keyrk = K_API::GetUserDataBasedOnToken($token);
 
-        if (empty($u_keystr))
+        if (empty($u_keyrk))
             return false;
 
         // Extract user role from Keyrock
@@ -119,7 +119,7 @@ class User
      */
     public static function GetFullUserDataBasedOnKeyrockData($user_keyrock_data): User | bool
     {
-        // Use User data that has already been retrieved from keystore
+        // Use User data that has already been retrieved from keyrock
         $u_keyrk = $user_keyrock_data;
 
         if (empty($u_keyrk))
@@ -414,26 +414,92 @@ class User
         if ($data['user_role'] !== USER::ADMIN && $data['user_role'] !== USER::CINEMAOWNER && $data['user_role'] !== USER::USER)
             return false;
 
-        // Validate IsConfirmed:
-        if ( !empty($data['user_confirmed']) && $data['user_confirmed'] === "true")
-            $isConfirmed = true;
-        else
-            $isConfirmed = false;
+        $success_keyrock = self::EditUserOnKeyrock($data);
+
+        $success_dbservice = self::EditUserOnDBService($data);
+
+        return $success_keyrock && $success_dbservice;
 
 
-        $username = $data['user_username'];
-        $password= $data['user_password'];
-        $name = $data['user_name'];
-        $surname = $data['user_surname'];
-        $email = $data['user_email'];
-        $role = $data['user_role'];
-        $id = $data['user_id'];
+    }
 
+    /** Edit user's data on keyrock service
+     * @param $data 'Document array with user data
+     * @return bool
+     */
+    public static function EditUserOnKeyrock($data): bool
+    {
+        $new_user = self::CreateExistingUserObj(
+            $data['user_id'], "", "", $data['user_username'],
+            $data['user_password'], $data["user_email"], $data["user_role"], true);
+
+        // Edit username, password, email
+        $succcess_mainEdit = K_API::EditUser($new_user);
+
+        $curr_role = self::GetUserRole($new_user->k_id);
+
+        // Edit role
+        $success_Role = true;
+        if ($curr_role != $new_user->role)
+        {
+            /*
+             * Remove user from appropriate organization based on his current role
+             */
+            if ($curr_role == self::ADMIN)
+            {
+                $success_removeOrg = K_API::RemoveUserFromOrgByName($new_user->k_id, self::ORG_ADMIN, "owner");
+                $success_removeOrg = $success_removeOrg && K_API::RemoveUserFromOrgByName($new_user->k_id, self::ORG_CINEMAOWNER, "owner");
+                $success_removeOrg = $success_removeOrg && K_API::RemoveUserFromOrgByName($new_user->k_id, self::ORG_USER, "owner");
+            }
+            else if ($curr_role == self::CINEMAOWNER)
+            {
+                $success_removeOrg = K_API::RemoveUserFromOrgByName($new_user->k_id, self::ORG_CINEMAOWNER, "member");
+            }
+            else
+            {
+                $success_removeOrg = K_API::RemoveUserFromOrgByName($new_user->k_id, self::ORG_USER, "member");
+            }
+
+            /*
+             * Add user to corresponding organizations based on his new role
+             */
+            if ($new_user->role == self::ADMIN)
+            {
+                $success_addOrg = K_API::AddUserToOrgByName($new_user->k_id, self::ORG_ADMIN, "owner");
+                $success_addOrg = $success_addOrg && K_API::AddUserToOrgByName($new_user->k_id, self::ORG_CINEMAOWNER, "owner");
+                $success_addOrg = $success_addOrg && K_API::AddUserToOrgByName($new_user->k_id, self::ORG_USER, "owner");
+            }
+            else if ($new_user->role == self::CINEMAOWNER)
+            {
+                $success_addOrg = K_API::AddUserToOrgByName($new_user->k_id, self::ORG_CINEMAOWNER, "member");
+            }
+            else
+            {
+                $success_addOrg = K_API::AddUserToOrgByName($new_user->k_id, self::ORG_USER, "member");
+            }
+
+            // Check if role change was successful
+            $success_Role = $success_removeOrg && $success_addOrg;
+        }
+
+        // Check if all edits were succesful
+        return $succcess_mainEdit && $success_Role;
+    }
+
+    /** Edit user's data on the Database Service (MongoDB)
+     * @param $data 'Document array with user data
+     * @return bool Success boolean
+     */
+    public static function EditUserOnDBService($data): bool
+    {
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/" . $id;
+        $url = "http://db-proxy:1027/users/{$data['user_id']}";
         $fields = [
-            'name'   => $name,
-            'surname'   => $surname,
+            'username' => $data['user_username'],
+            'email' => $data['user_email'],
+            'name'   => $data['user_name'],
+            'surname'   => $data['user_surname'],
+            'role' => $data['user_role'],
         ];
 
         $fields_string = http_build_query($fields);
@@ -473,19 +539,26 @@ class User
                 Error: ". $err . " .. errcode: " . $errno);
 
         return false;
-
     }
 
     /** Deletes User from Database
-     * @param $id User's id to be deleted
+     * @param $user_id User's id to be deleted
      * @return bool Success boolean
      */
-    public static function DeleteUser(string $id):bool
+    public static function DeleteUser(string $user_id):bool
     {
-        logger("Trying to delete user with id: " . $id);
+        logger("Trying to delete user with id: " . $user_id);
 
+        $success_keyrock = K_API::DeleteUser($user_id);
+        $success_dbserv = self::DeleteUserOnDBService($user_id);
+
+        return $success_keyrock && $success_dbserv;
+    }
+
+    public static function DeleteUserOnDBService(string $user_id): bool
+    {
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/" . $id;
+        $url = "http://db-proxy:1027/users/" . $user_id;
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "DELETE");
