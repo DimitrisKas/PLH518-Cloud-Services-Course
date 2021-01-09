@@ -6,6 +6,7 @@ include_once 'db_scripts/Models/Movies.php';
 include_once 'db_scripts/keyrock_api.php';
 include_once('Utils/Random.php');
 include_once('Utils/Logs.php');
+include_once('./util_funcs.php');
 
 logger("-- In Movies");
 
@@ -13,6 +14,8 @@ logger("-- In Movies");
 if (isset($_SESSION['login'])
     && $_SESSION['login'] === true)
 {
+    LogoutIfInactive();
+
     // User already logged in...
     logger("User: " . $_SESSION['user_username']);
     logger("Role: " . $_SESSION['user_role']);
@@ -20,23 +23,7 @@ if (isset($_SESSION['login'])
 }
 else
 {
-    // Redirect to index
-    $feedback = "true";
-    $f_title = "You do not have access to that page.";
-    $f_msg_count = 0;
-    $f_color = "f-error";
-    ?>
-    <form id="redirect-form" action="./index.php" method="post">
-        <input type="hidden" name="feedback" value="<?php echo $feedback?>">
-        <input type="hidden" name="f_color" value="<?php echo $f_color?>">
-        <input type="hidden" name="f_title" value="<?php echo $f_title?>">
-        <input type="hidden" name="f_msg_count" value="<?php echo $f_msg_count?>">
-    </form>
-    <script type="text/javascript">
-        document.getElementById("redirect-form").submit();
-    </script>
-    <?php
-    exit();
+
 }
 
 ?>

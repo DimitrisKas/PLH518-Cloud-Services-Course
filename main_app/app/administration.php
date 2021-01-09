@@ -6,6 +6,7 @@ include_once('db_scripts/db_connection.php');
 include_once('db_scripts/keyrock_api.php');
 include_once('Utils/Random.php');
 include_once('Utils/Logs.php');
+include_once('./util_funcs.php');
 
 logger("-- In Administration");
 
@@ -15,6 +16,8 @@ if (isset($_SESSION['login'])
     && isset($_SESSION['user_role'])
     && $_SESSION['user_role'] === User::ADMIN)
 {
+    LogoutIfInactive();
+
     // User already logged in...
     logger("User: " . $_SESSION['user_username']);
     logger("Role: " . $_SESSION['user_role']);

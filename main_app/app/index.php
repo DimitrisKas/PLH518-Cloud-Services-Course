@@ -6,8 +6,6 @@ include_once('db_scripts/keyrock_api.php');
 include_once('Utils/Random.php');
 include_once('Utils/Logs.php');
 
-
-
 logger("-- In index: ");
 
 // Initialize variables
@@ -31,8 +29,20 @@ if ($KAPI->AreOrgsInitialized() == false)
 
 
 // Check if logging out
-if (isset($_GET['logout']))
+if (isset($_GET['logout'])) {
+
     $_SESSION['login'] = false;
+
+    unset(
+        $_SESSION['user_id'],
+        $_SESSION['user_username'],
+        $_SESSION['user_role'],
+        $_SESSION['user_email'],
+        $_SESSION['user_name'],
+        $_SESSION['user_surname'],
+        $_SESSION['login_timestamp']
+    );
+}
 else if (isset($_SESSION['login']) && $_SESSION['login'] === true)
 {
     // Redirecting to Welcome page

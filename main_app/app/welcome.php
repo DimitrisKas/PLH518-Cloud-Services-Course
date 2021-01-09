@@ -6,12 +6,14 @@ include_once('db_scripts/db_connection.php');
 include_once('db_scripts/keyrock_api.php');
 include_once('Utils/Random.php');
 include_once('Utils/Logs.php');
+include_once('util_funcs.php');
 
 logger("-- In Welcome.php");
 
 if (isset($_SESSION['login']) && $_SESSION['login'] === true)
 {
-    // User already logged in...
+    LogoutIfInactive();
+
     logger("User already logged in");
     logger("Logged in User: " . $_SESSION['user_username']);
     logger("Role: " . $_SESSION['user_role']);
@@ -81,6 +83,7 @@ else
             $_SESSION['user_name'] = $currentUser->name;
             $_SESSION['user_surname'] = $currentUser->surname;
 
+            $_SESSION['login_timestamp'] = time();
             $_SESSION['login'] = true;
             logger("Logged in User: " . $currentUser->username);
             logger("Role: " . $currentUser->role);
