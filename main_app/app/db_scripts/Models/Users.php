@@ -67,7 +67,7 @@ class User
     }
 
     /** Create a User object for User that already exists in Database. (i.e. has an ID)
-     * @param $k_id User's keystore id
+     * @param $k_id User's keyrock id
      * @param $name
      * @param $surname
      * @param $username
@@ -84,60 +84,60 @@ class User
         return $user;
     }
 
-    /** Returns all user data associated with given Keystore access token
-     * @param $token User's Access token from Keystore
+    /** Returns all user data associated with given Keyrock access token
+     * @param $token User's Access token from Keyrock
      * @return User | bool Returns User model with data. False on error
      */
     public static function GetFullUserDataFromToken($token): User | bool
     {
-        // User data directly from keystore
+        // User data directly from keyrock
         $u_keystr = K_API::GetUserData($token);
 
         if (empty($u_keystr))
             return false;
 
-        // Extract user role from Keystore
-        $role = User::GetUserRole($u_keystr['id']);
+        // Extract user role from Keyrock
+        $role = User::GetUserRole($u_keyrk['id']);
 
         // Get extra info from DB service (mongo database)
-        $u_mongo = User::GetUserFromDBService($u_keystr['id']);
+        $u_mongo = User::GetUserFromDBService($u_keyrk['id']);
 
         return User::CreateExistingUserObj(
-            $u_keystr['id'],
+            $u_keyrk['id'],
             $u_mongo['name'],
             $u_mongo['surname'],
-            $u_keystr['username'],
+            $u_keyrk['username'],
             "",
-            $u_keystr['email'],
+            $u_keyrk['email'],
             $role,
             true);
     }
 
-    /** Returns all user data associated with given Keystore Retrieved User Data.
-     * @param $user_keystore_data User's Data that was retrieved from Keystore Service
+    /** Returns all user data associated with given Keyrock Retrieved User Data.
+     * @param $user_keyrock_data User's Data that was retrieved from Keyrock Service
      * @return User | bool Returns User model with data. False on error
      */
-    public static function GetFullUserDataFromKeystoreData($user_keystore_data): User | bool
+    public static function GetFullUserDataBasedOnKeyrockData($user_keyrock_data): User | bool
     {
         // Use User data that has already been retrieved from keystore
-        $u_keystr = $user_keystore_data;
+        $u_keyrk = $user_keyrock_data;
 
-        if (empty($u_keystr))
+        if (empty($u_keyrk))
             return false;
 
-        // Extract user role from Keystore
-        $role = User::GetUserRole($u_keystr['id']);
+        // Extract user role from Keyrock
+        $role = User::GetUserRole($u_keyrk['id']);
 
         // Get extra info from DB service (mongo database)
-        $u_mongo = User::GetUserFromDBService($u_keystr['id']);
+        $u_mongo = User::GetUserFromDBService($u_keyrk['id']);
 
         return User::CreateExistingUserObj(
-            $u_keystr['id'],
+            $u_keyrk['id'],
             $u_mongo['name'],
             $u_mongo['surname'],
-            $u_keystr['username'],
+            $u_keyrk['username'],
             "",
-            $u_keystr['email'],
+            $u_keyrk['email'],
             $role,
             true);
     }
@@ -321,8 +321,8 @@ class User
         return false;
     }
 
-    /** Queries the Database service to retrieve available data for given User's Keystore id
-     * @param string $user_k_id User keystore ID
+    /** Queries the Database service to retrieve available data for given User's Keyrock id
+     * @param string $user_k_id User keyrock ID
      * @return array Returns document array containing User's data
      */
     public static function GetUserFromDBService(string $user_k_id): array
@@ -388,9 +388,9 @@ class User
         {
             $users = array();
             $i =0;
-            foreach ($users_kstr as $user_keystore_doc)
+            foreach ($users_kstr as $user_keyrock_doc)
             {
-                $users[$i++] = User::GetFullUserDataFromKeystoreData($user_keystore_doc);
+                $users[$i++] = User::GetFullUserDataBasedOnKeyrockData($user_keyrock_doc);
             }
 
             return array($success, $users, "");
@@ -543,7 +543,7 @@ class User
         else
         {
             logger("User succesfully logged in!");
-            $user = User::GetFullUserDataFromToken($token);
+            $user = User::GetFullUserDataBasedOnToken($token);
             return array(true, $user, "");
         }
 
@@ -642,7 +642,7 @@ class User
         return false;
     }
 
-    /** Extract User's role (ADMIN/CINEMAOWNER/USER) based on Keystore organizations he is a member/owner of.
+    /** Extract User's role (ADMIN/CINEMAOWNER/USER) based on Keyrock organizations he is a member/owner of.
      * @param string $user_k_id User's Keyrock id
      * @return string User's role
      */
