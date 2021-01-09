@@ -585,7 +585,7 @@ class KeyrockAPI
         logger("Deleting user with id {$user_id} from keyrock");
         $ch = curl_init();
 
-        curl_setopt($ch, CURLOPT_URL, "http://keyrock:3000/v1/users/user_id");
+        curl_setopt($ch, CURLOPT_URL, "http://keyrock:3000/v1/users/{$user_id}");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($ch, CURLOPT_HEADER, FALSE);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
