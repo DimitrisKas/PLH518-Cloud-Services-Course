@@ -110,7 +110,7 @@ $app->get('/users/search/{username}', function (Request $request, Response $resp
 // - Edit user
 $app->put('/users/{k_id}', function (Request $request, Response $response, $args) {
 
-    logger("\n --- At [PUT] /users/{k_id} - (Edit User)");
+    logger("\n --- At [PUT] /users/{$args['k_id']} - (Edit User)");
     // Get all parameters
     $params = (array)$request->getParsedBody();
     $res = User::updateOne($args['k_id'], new User($params));

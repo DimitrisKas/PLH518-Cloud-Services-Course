@@ -6,7 +6,6 @@ use RestAPI\Result;
 use RestAPI\iRestObject;
 use Models\Generic\User;
 use Models\Generic\Cinema;
-use MongoDB\BSON\ObjectId;
 
 /**
  * Class UserM extends Generic User Class
