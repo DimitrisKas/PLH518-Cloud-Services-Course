@@ -92,7 +92,7 @@ class Movie
         }
 
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/".$user_id."/cinemas/".$this->cinema_name."/movies";
+        $url = "http://db-proxy:9004/users/".$user_id."/cinemas/".$this->cinema_name."/movies";
         $fields = [
             'title'   => $this->title,
             'start_date'   => $this->start_date,
@@ -159,7 +159,7 @@ class Movie
         }
 
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/".$user_id."/movies/".$id;
+        $url = "http://db-proxy:9004/users/".$user_id."/movies/".$id;
         $fields = [
             'title' => $title,
             'start_date' => $start_date,
@@ -226,7 +226,7 @@ class Movie
         logger("Trying to delete movie with id: " . $movie_id);
 
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/".$owner_id."/movies/".$movie_id;
+        $url = "http://db-proxy:9004/users/".$owner_id."/movies/".$movie_id;
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "DELETE");
@@ -273,7 +273,7 @@ class Movie
         }
 
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/".$user_id."/movies/all";
+        $url = "http://db-proxy:9004/users/".$user_id."/movies/all";
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
@@ -330,7 +330,7 @@ class Movie
     public static function Search($user_id, $title, $date, $cinema_name, $category): array | bool
     {
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/".$user_id."/movies/search";
+        $url = "http://db-proxy:9004/users/".$user_id."/movies/search";
         $fields = [
             'title'   => $title,
             'date'   => $date,
@@ -403,7 +403,7 @@ class Movie
         }
 
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/".$user_id."/movies/owned";
+        $url = "http://db-proxy:9004/users/".$user_id."/movies/owned";
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);

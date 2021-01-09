@@ -65,7 +65,7 @@ class Cinema
         }
 
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/".$this->owner."/cinemas";
+        $url = "http://db-proxy:9004/users/".$this->owner."/cinemas";
         $fields = [
             'owner'   => $this->owner,
             'name'   => $this->name,
@@ -126,7 +126,7 @@ class Cinema
         }
 
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/".$owner_id."/cinemas";
+        $url = "http://db-proxy:9004/users/".$owner_id."/cinemas";
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
@@ -196,7 +196,7 @@ class Cinema
         }
 
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/".$owner_id."/cinemas/".$cinema_id;
+        $url = "http://db-proxy:9004/users/".$owner_id."/cinemas/".$cinema_id;
         $fields = [
             'name'   => $name,
         ];
@@ -265,7 +265,7 @@ class Cinema
         logger("Trying to delete cinema with id: " . $cinema_id);
 
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/".$owner_id."/cinemas/".$cinema_id ;
+        $url = "http://db-proxy:9004/users/".$owner_id."/cinemas/".$cinema_id ;
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "DELETE");

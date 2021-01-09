@@ -269,7 +269,7 @@ class User
         logger("Registering user to MongoDB");
 
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users";
+        $url = "http://db-proxy:9004/users";
         $fields = [
             'k_id' => $this->k_id,
             'username'  => $this->username,
@@ -329,7 +329,7 @@ class User
     {
         logger("Getting user's data from DB Service based on token.");
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/{$user_k_id}";
+        $url = "http://db-proxy:9004/users/{$user_k_id}";
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
@@ -493,7 +493,7 @@ class User
     public static function EditUserOnDBService($data): bool
     {
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/{$data['user_id']}";
+        $url = "http://db-proxy:9004/users/{$data['user_id']}";
         $fields = [
             'username' => $data['user_username'],
             'email' => $data['user_email'],
@@ -558,7 +558,7 @@ class User
     public static function DeleteUserOnDBService(string $user_id): bool
     {
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/" . $user_id;
+        $url = "http://db-proxy:9004/users/" . $user_id;
 
         curl_setopt($ch,CURLOPT_URL, $url);
         curl_setopt($ch,CURLOPT_CUSTOMREQUEST, "DELETE");
@@ -627,7 +627,7 @@ class User
         logger("Trying to add favorite movie for user with id: " . $user_id);
 
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/".$user_id."/favorites";
+        $url = "http://db-proxy:9004/users/".$user_id."/favorites";
         $fields = [
             'movie_id'  => $movie_id,
         ];
@@ -676,7 +676,7 @@ class User
         logger("Trying to delete favorite movie for user with id: " . $user_k_id);
 
         $ch = curl_init();
-        $url = "http://db-proxy:1027/users/".$user_k_id."/favorites/".$movie_id;
+        $url = "http://db-proxy:9004/users/".$user_k_id."/favorites/".$movie_id;
 
 
         curl_setopt($ch,CURLOPT_URL, $url);

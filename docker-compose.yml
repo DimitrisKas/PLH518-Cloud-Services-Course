@@ -104,18 +104,57 @@ services:
       - 'MYSQL_ROOT_PASSWORD=secret'
     volumes:
       - mysql-keyrock:/var/lib/mysql
-  
-  # ocb:    // Orion Context Broken
-  #   image: "fiware/orion"
-  #   links:
-  #    - mongo
-  #    ports:
-  #    - "1026:1026"
-  
+
+
   db-proxy:
     image: fiware/pep-proxy
     depends_on:
       - keyrock
+      - db-service
+    deploy:
+      restart_policy:
+        condition: on-failure
+    ports:
+      - 9004:9004
+    networks:
+      proj2-net:
+    environment:
+      - 'PEP_PROXY_APP_HOST=db-service'
+      - 'PEP_PROXY_APP_PORT=80'
+      - 'PEP_PROXY_PORT=9004'
+      - 'PEP_PROXY_IDM_HOST=keyrock'
+      - 'PEP_PROXY_HTTPS_ENABLED=false'
+      - 'PEP_PROXY_AUTH_ENABLED=false'
+      - 'PEP_PROXY_IDM_SSL_ENABLED=false'
+      - 'PEP_PROXY_IDM_PORT=3000'
+      - 'PEP_PROXY_APP_ID=09e67316-d0fa-490a-a2c9-58107a67cab8'
+      - 'PEP_PROXY_USERNAME=pep_proxy_e30a4575-25e1-43d4-8abf-b12452759d72'
+      - 'PEP_PASSWORD=pep_proxy_796fbac3-8bcf-4f67-b4dd-1e0aa88a883a'
+      - 'PEP_PROXY_PDP=idm'
+      - 'PEP_PROXY_MAGIC_KEY=123456'
+
+  orion:    # Orion Context Broker
+    image: "fiware/orion"
+    links:
+      - mongo-orion
+    ports:
+      - "1026:1026"
+    networks:
+      proj2-net:
+    command: -dbhost mongo-orion
+
+  mongo-orion:
+    image: mongo
+    networks:
+      proj2-net:
+    volumes:
+      - mongo-orion:/data/db
+
+  orion-proxy:
+    image: fiware/pep-proxy
+    depends_on:
+      - keyrock
+      - orion
     deploy:
       restart_policy:
         condition: on-failure
@@ -124,8 +163,8 @@ services:
     networks:
       proj2-net:
     environment:
-      - 'PEP_PROXY_APP_HOST=db-service'
-      - 'PEP_PROXY_APP_PORT=80'
+      - 'PEP_PROXY_APP_HOST=orion'
+      - 'PEP_PROXY_APP_PORT=1026'
       - 'PEP_PROXY_PORT=1027'
       - 'PEP_PROXY_IDM_HOST=keyrock'
       - 'PEP_PROXY_HTTPS_ENABLED=false'
@@ -138,11 +177,11 @@ services:
       - 'PEP_PROXY_PDP=idm'
       - 'PEP_PROXY_MAGIC_KEY=123456'
 
-
 volumes:
   mysql-storage:
   mongo-storage:
   mysql-keyrock:
+  mongo-orion:
 
 networks:
   proj2-net:
