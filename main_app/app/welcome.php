@@ -149,16 +149,10 @@ else
                     </div>
                     ';
             ?>
-            <textarea class="card welcome-option" id="websocket">Hello</textarea>
         </div>
 
     </div>
 </body>
 <script>
-    var host = 'wss://localhost:8300/websockets.php';
-    var socket = new WebSocket(host);
-    socket.onmessage = function(e) {
-        document.getElementById('websocket').innerHTML = e.data;
-    };
 </script>
 </html>
