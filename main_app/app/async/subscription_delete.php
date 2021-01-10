@@ -1,6 +1,7 @@
 <?php
 session_start();
 header('Content-type: application/json');
+
 include_once '../db_scripts/Models/Users.php';
 include_once '../db_scripts/Models/Movies.php';
 include_once('../db_scripts/keyrock_api.php');
@@ -8,13 +9,11 @@ include_once('../db_scripts/orion_api.php');
 include_once('../Utils/Random.php');
 include_once('../Utils/Logs.php');
 
-logger("-- In Edit Movie");
+logger("-- In Delete subscription");
 
 // Check if User is logged in AND is an Admin
 if (isset($_SESSION['login'])
-    && $_SESSION['login'] === true
-    && isset($_SESSION['user_role'])
-    && $_SESSION['user_role'] === User::CINEMAOWNER)
+    && $_SESSION['login'] === true )
 {
     // User already logged in...
     logger("User: " . $_SESSION['user_username']);
@@ -24,16 +23,7 @@ if (isset($_SESSION['login'])
 
     If (isset($data['movie_id']))
     {
-        $success_flag = Movie::EditMovie(
-            $_SESSION['user_id'],
-            $data['movie_id'],
-            $data['movie_title'],
-            $data['movie_start_date'],
-            $data['movie_end_date'],
-            $data['movie_cinema_name'],
-            $data['movie_category']
-        );
-
+        $success_flag = Orion_API::Unsubscribe($_SESSION['user_id'], $data['movie_id']);
         echo json_encode($success_flag);
         exit();
     }

@@ -21,9 +21,9 @@ class MovieM extends Movie
         parent::__construct($doc);
     }
 
-    /** Adds Movie to database
+    /** Adds Movie to database. Returns the Movie's new ID on success as the Result->msg
      * @param $obj Movie
-     * @return Result Result object with success boolean and a message
+     * @return Result Result object with success boolean and a message. On success $msg is the new ID
      */
     public static function addOne($obj): Result
     {
@@ -49,9 +49,15 @@ class MovieM extends Movie
             {
                 return Result::withLogMsg(false, "Couldn't insert Movie with name: " . $obj->title);
             }
+            else
+            {
+                $new_id = $insertResult->getInsertedId()->__toString();
+                return Result::withLogMsg(true, $new_id);
+            }
         }
 
-        return Result::withLogMsg(true, "Movie ".$obj->title." at cinema ".$obj->cinema_name." successfully  created");
+        return Result::withLogMsg(false, "Undefined error");
+
     }
 
     /**

@@ -242,7 +242,10 @@ $app->post('/users/{k_id}/cinemas/{cinema_name}/movies', function (Request $requ
 
     if ($result->success)
     {
-        return $response->withStatus(201);
+        $response->getBody()->write(json_encode([
+            'movie_id' => $result->msg
+        ]));
+        return $response;
     }
     else
     {
@@ -378,6 +381,90 @@ $app->delete('/users/{k_id}/favorites/{m_id}', function (Request $request, Respo
     logger("\n --- At [DELETE] /users/".$user_k_id."/favorites/".$m_id);
 
     $result = User::removeFavorite($user_k_id, $m_id);
+
+    if ($result->success)
+    {
+        return $response->withStatus(204);
+    }
+    else
+    {
+        $response->getBody()->write($result->msg);
+        return $response->withStatus(403);
+    }
+
+});
+
+
+/* =====================
+ *        SUBSCRIPTIONS
+ * ===================== */
+
+// Add /users/{k_id}/subscriptions
+// - Add a subscription to user
+$app->post('/users/{k_id}/subscriptions', function (Request $request, Response $response, $args) {
+
+    $user_k_id = $args['k_id'];
+
+    // Get all POST parameters
+    $params = (array)$request->getParsedBody();
+    $sub_id_1 = $params["sub_id_1"];
+    $sub_id_2 = $params["sub_id_2"];
+    $sub_date = $params["sub_date"];
+    $m_id = $params["movie_id"];
+
+    logger("\n --- At [POST] /users/".$user_k_id."/subscriptions");
+
+    $result = User::addSubscription($user_k_id, $m_id, $sub_id_1, $sub_id_2, $sub_date);
+
+    if ($result->success)
+    {
+        return $response->withStatus(201);
+    }
+    else
+    {
+        $response->getBody()->write($result->msg);
+        return $response->withStatus(403);
+    }
+
+});
+
+// Get  /users/{k_id}/subscriptions
+// - Get all user's subscriptions
+$app->get('/users/{k_id}/subscriptions', function (Request $request, Response $response, $args) {
+
+    $user_k_id = $args['k_id'];
+
+    logger("\n --- At [GET] /users/".$user_k_id."/subscriptions");
+
+    $result = User::getSubscriptions($user_k_id);
+
+    $response->getBody()->write(json_encode($result));
+    return $response;
+});
+
+//// Get  /users/{k_id}/subscriptions/{m_id}
+//// - Get a user's subscriptions
+//$app->get('/users/{k_id}/subscriptions/{m_id}', function (Request $request, Response $response, $args) {
+//
+//    $user_k_id = $args['k_id'];
+//    $m_id = $args['m_id'];
+//    logger("\n --- At [GET] /users/".$user_k_id."/subscriptions/".$m_id);
+//
+//    $result = User::getOneSubscription($user_k_id, $m_id);
+//
+//    $response->getBody()->write(json_encode($result));
+//    return $response;
+//});
+
+// Delete /users/{k_id}/subscriptions/{m_id}
+// - Delete a subscription from user based on movie id
+$app->delete('/users/{k_id}/subscriptions/{m_id}', function (Request $request, Response $response, $args) {
+
+    $user_k_id = $args['k_id'];
+    $m_id = $args['m_id'];
+    logger("\n --- At [DELETE] /users/".$user_k_id."/subscriptions/".$m_id);
+
+    $result = User::removeSubscription($user_k_id, $m_id);
 
     if ($result->success)
     {

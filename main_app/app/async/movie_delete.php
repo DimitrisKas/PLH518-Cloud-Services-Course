@@ -4,6 +4,7 @@ header('Content-type: application/json');
 include_once '../db_scripts/Models/Users.php';
 include_once '../db_scripts/Models/Movies.php';
 include_once('../db_scripts/keyrock_api.php');
+include_once('../db_scripts/orion_api.php');
 include_once('../Utils/Random.php');
 include_once('../Utils/Logs.php');
 

@@ -4,6 +4,7 @@ session_start();
 include_once 'db_scripts/Models/Users.php';
 include_once 'db_scripts/Models/Movies.php';
 include_once 'db_scripts/keyrock_api.php';
+include_once('db_scripts/orion_api.php');
 include_once('Utils/Random.php');
 include_once('Utils/Logs.php');
 include_once('Utils/util_funcs.php');
@@ -78,7 +79,7 @@ else
 
 <div class="main-content" id="movies_content">
     <div class="card">
-        <h4>Manage Users</h4>
+        <h4>View available Movies</h4>
         <hr/>
         <div id="popup-box-cont" class="f-success" hidden>
             <p id="popup-box-text" ></p>
@@ -93,6 +94,7 @@ else
                         <th>End Date</th>
                         <th>Cinema Name</th>
                         <th>Category</th>
+                        <th>Subscribe</th>
                     </tr>
 
                     <?php
@@ -115,6 +117,12 @@ else
                             <td><div><span id="<?php echo $movie->id?>_end_date"    ><?php echo $movie->end_date?></span></div></td>
                             <td><div><span id="<?php echo $movie->id?>_cinema_name" ><?php echo $movie->cinema_name?></span></div></td>
                             <td><div><span id="<?php echo $movie->id?>_category"    ><?php echo $movie->category?></span></div></td>
+                            <td>
+                                <div>
+                                    <input id="<?php echo $movie->id?>_sub_date" name="date" class="custom-input" type="date" value="" placeholder="Date"/>
+                                    <button class="btn-primary btn-success" onclick="subToMovie('<?php echo $movie->id?>')">Submit</button>
+                                </div>
+                            </td>
                         </tr>
                         <?php
                     }
@@ -136,15 +144,101 @@ else
 
     </div>
 
+    <div class="card">
+        <h4>Manage your Subscriptions</h4>
+        <hr/>
+        <div  class="table-container">
+            <div id="subs-container">
+                <table id="subs-table">
+                    <tr>
+                        <th>Movie Title</th>
+                        <th>Date of Interest</th>
+                        <th>Delete</th>
+                    </tr>
+
+                    <?php
+                    $subscriptions = Orion_API::GetAllUserSubscriptionsFromDB($_SESSION['user_id']);
+                    foreach ($subscriptions as $sub)
+                    {
+                        $movie_id = $sub['movie_id'];
+                        ?>
+                        <tr id="sub_<?php echo $movie_id?>">
+                            <td><div><span id="sub_<?php echo $movie_id?>_title" ><?php echo $sub['movie_title']?></span></div></td>
+                            <td><div><span id="sub_<?php echo $movie_id?>_date"  ><?php echo $sub['date']?></span></div></td>
+                            <td class="action-td">
+                                <div><button id="sub_<?php echo $movie_id?>_delete" class="btn-primary btn-danger" onclick="deleteSub('<?php echo $movie_id?>')" >Delete</button></div>
+                            </td>
+                        </tr>
+                        <?php
+                    }
+                    ?>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
 </div>
 </body>
 <script type="text/javascript">
 
     document.getElementById("popup-box-cont").hidden = false;
 
+    function subToMovie(movie_id)
+    {
+        let date = document.getElementById(movie_id + '_sub_date').value;
+
+        fetch('async/movie_subscribe.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                'movie_id' : movie_id,
+                'date' : date
+            })
+        })
+            .then( response => {
+                return response.json();
+            })
+            .then( success =>{
+                showModal(success);
+                getSubs();
+            });
+    }
+
+    function deleteSub(movie_id)
+    {
+        fetch('async/subscription_delete.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                'movie_id' :movie_id
+            })
+        })
+            .then( response => {
+                return response.json();
+            })
+            .then( success =>{
+                showModal(success);
+                getSubs();
+            });
+    }
+
+    function getSubs()
+    {
+        fetch('async/subscription_get.php', {
+            method: 'POST',
+        })
+            .then( response => {
+                response.text()
+                    .then( text => {
+                        let container = document.getElementById("subs-container");
+                        container.innerHTML = text;
+                    });
+            });
+    }
+
     function getMovies(isSearching)
     {
-        console.log("Searching...");
         let data = {}
         if(isSearching)
         {

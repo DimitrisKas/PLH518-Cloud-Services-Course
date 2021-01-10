@@ -269,4 +269,114 @@ class UserM extends User implements iRestObject {
         else
             return Result::withLogMsg(true, );
     }
+
+
+    /** Add subscription to user. Each movie subscription has 2 id for two seperate subscriptions
+     * (One for date change notification and one for isLive notification)
+     * @param string $user_k_id User's Keystore ID
+     * @param string $movie_id Movie's Mongo ID
+     * @param string $sub_id_1 Subscription ID 1 from Orion
+     * @param string $sub_id_2 Subscription ID 2 from Orion
+     * @param string $sub_date Date of interest
+     * @return Result
+     */
+    public static function addSubscription(string $user_k_id, string $movie_id, string $sub_id_1, string $sub_id_2, string $sub_date): Result
+    {
+
+        $movie = MovieM::getOne($movie_id);
+
+        $db = connect();
+        $coll = $db->selectCollection(UserM::COLL_NAME);
+        $update_doc = $coll->findOneAndUpdate(
+            ['k_id' => $user_k_id],
+            ['$addToSet' => [
+                'subscriptions' => [
+                    'movie_id' => $movie_id,
+                    'date' => $sub_date,
+                    'sub_id_1' => $sub_id_1,
+                    'sub_id_2' => $sub_id_2,
+                    'movie_title' => $movie->title
+                ]
+            ]]
+        );
+
+        if ($update_doc == null)
+            return Result::withLogMsg(false, "Couldn't add subscription to user with id: " . $user_k_id, );
+
+        else
+            return Result::withLogMsg(true,  );
+    }
+
+    /** Get all Subscriptions from user
+     * @param string $user_k_id User's Keystore ID
+     * @return array Result array with all the subscriptions
+     */
+    public static function getSubscriptions(string $user_k_id): array
+    {
+        $db = connect();
+        $coll = $db->selectCollection(UserM::COLL_NAME);
+        $user_doc = $coll->findOne(['k_id' => $user_k_id], ['k_id' => 1]);
+
+        $subs = array();
+        $i = 0;
+        if (isset($user_doc['subscriptions']))
+        {
+            foreach($user_doc['subscriptions'] as $sub)
+            {
+                $subs[$i++] = $sub;
+            }
+        }
+
+
+        return  $subs;
+    }
+
+
+//    /** Get a Subscription from user
+//     * @param string $user_k_id User's Keystore ID
+//     * @param string $movie_id Movies' MongoDB ID
+//     * @return Result
+//     */
+//    public static function getSubscription(string $user_k_id, string $movie_id): Result
+//    {
+//        $db = connect();
+//        $coll = $db->selectCollection(UserM::COLL_NAME);
+//        $update_doc = $coll->findOne(
+//            [
+//                'k_id' => $user_k_id,
+//                'subscriptions.movie_id' => $movie_id
+//            ],
+//        );
+//
+//        if ($update_doc == null)
+//            return Result::withLogMsg(false, "Couldn't remove favorite to user with id: " . $user_k_id, );
+//
+//        else
+//            return Result::withLogMsg(true, );
+//    }
+
+    /** Remove Subscription from user
+     * @param string $user_k_id User's Keystore ID
+     * @param string $movie_id Movies' MongoDB ID
+     * @return Result
+     */
+    public static function removeSubscription(string $user_k_id, string $movie_id): Result
+    {
+        $db = connect();
+        $coll = $db->selectCollection(UserM::COLL_NAME);
+        $update_doc = $coll->findOneAndUpdate(
+            ['k_id' => $user_k_id],
+            ['$pull' => [
+                'subscriptions' => [
+                    'movie_id' => $movie_id
+                ]
+            ]]
+        );
+
+        if ($update_doc == null)
+            return Result::withLogMsg(false, "Couldn't remove favorite to user with id: " . $user_k_id, );
+
+        else
+            return Result::withLogMsg(true, );
+    }
 }

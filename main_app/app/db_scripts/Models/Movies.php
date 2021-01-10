@@ -114,7 +114,6 @@ class Movie
         logger("Sending Request...");
         $result = curl_exec($ch);
 
-
         // Retrieve HTTP status code
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         logger("HTTP code: ". $http_code);
@@ -123,7 +122,17 @@ class Movie
         {
             logger("Cinema succesfully created!");
             curl_close($ch);
-            return true;
+
+            $result = json_decode($result, true);
+            $id = $result['movie_id'];
+
+            // If successful add to Orion too
+            $success_orion = Orion_API::CreateMovieEntity($id, $this->title, $this->start_date, $this->end_date, true);
+
+            if ($success_orion)
+                logger("Added movie entity to Orion");
+
+            return $success_orion;
         }
         else if ($http_code >= 400)
         {
@@ -248,8 +257,10 @@ class Movie
 
         // Parse results
         if ($http_code == 204)
+        {
+            Orion_API::UpdateMovieIsLive($movie_id, false);
             return true;
-
+        }
         else if ($http_code >= 400)
             logger("Movie could not be deleted.");
 
