@@ -6,7 +6,7 @@ include_once('db_scripts/db_connection.php');
 include_once('db_scripts/keyrock_api.php');
 include_once('Utils/Random.php');
 include_once('Utils/Logs.php');
-include_once('util_funcs.php');
+include_once('Utils/util_funcs.php');
 
 logger("-- In Welcome.php");
 
@@ -149,9 +149,16 @@ else
                     </div>
                     ';
             ?>
+            <textarea class="card welcome-option" id="websocket">Hello</textarea>
         </div>
-    </div>
 
+    </div>
 </body>
-<script ></script>
+<script>
+    var host = 'wss://localhost:8300/websockets.php';
+    var socket = new WebSocket(host);
+    socket.onmessage = function(e) {
+        document.getElementById('websocket').innerHTML = e.data;
+    };
+</script>
 </html>

@@ -54,7 +54,7 @@ class KeyrockAPI
         }
     }
 
-    static function AreOrgsInitialized()
+    static function AreOrgsInitialized(): bool
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "http://keyrock:3000/v1/organizations");
@@ -69,6 +69,15 @@ class KeyrockAPI
         curl_close($ch);
 
         $response = json_decode($response, true);
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        if ($http_code != 200)
+        {
+            logger("Error while confirming organization initialization");
+            return false;
+        }
 
         // Super simple check
         return count($response['organizations']) == 3;
@@ -94,8 +103,6 @@ class KeyrockAPI
         ));
 
         $result = curl_exec($ch);
-
-
 
         // Retrieve HTTP status code
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);

@@ -7,7 +7,7 @@ include_once 'db_scripts/Models/Movies.php';
 include_once 'db_scripts/db_connection.php';
 include_once('Utils/Random.php');
 include_once('Utils/Logs.php');
-include_once('./util_funcs.php');
+include_once('Utils/util_funcs.php');
 
 logger("-- In Owner");
 

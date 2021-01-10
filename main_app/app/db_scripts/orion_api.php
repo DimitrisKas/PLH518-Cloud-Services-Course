@@ -1,6 +1,10 @@
 <?php
 
-class Orion_API {
+/**
+ * Helper class containing all functions needed to communicated with the orion api
+ */
+class Orion_API
+{
 
     const WilmaMK = "123456";
     const TYPE = "Movie";

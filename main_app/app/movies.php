@@ -6,11 +6,11 @@ include_once 'db_scripts/Models/Movies.php';
 include_once 'db_scripts/keyrock_api.php';
 include_once('Utils/Random.php');
 include_once('Utils/Logs.php');
-include_once('./util_funcs.php');
+include_once('Utils/util_funcs.php');
 
 logger("-- In Movies");
 
-// Check if User is logged in AND is an Admin
+// Check if User is logged in
 if (isset($_SESSION['login'])
     && $_SESSION['login'] === true)
 {
@@ -23,7 +23,23 @@ if (isset($_SESSION['login'])
 }
 else
 {
-
+    // Redirect to index
+    $feedback = "true";
+    $f_title = "You must be logged in to view that page.";
+    $f_msg_count = 0;
+    $f_color = "f-error";
+    ?>
+    <form id="redirect-form" action="./index.php" method="post">
+        <input type="hidden" name="feedback" value="<?php echo $feedback?>">
+        <input type="hidden" name="f_color" value="<?php echo $f_color?>">
+        <input type="hidden" name="f_title" value="<?php echo $f_title?>">
+        <input type="hidden" name="f_msg_count" value="<?php echo $f_msg_count?>">
+    </form>
+    <script type="text/javascript">
+        document.getElementById("redirect-form").submit();
+    </script>
+    <?php
+    exit();
 }
 
 ?>

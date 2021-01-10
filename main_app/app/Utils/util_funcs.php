@@ -27,7 +27,7 @@ function LogoutIfInactive() {
         $f_msg_count = 0;
         $f_color = "f-error";
         ?>
-        <form id="toIndex" action="./index.php?logout" method="post">
+        <form id="toIndex" action="../index.php?logout" method="post">
             <input type="hidden" name="feedback" value="<?php echo $feedback?>">
             <input type="hidden" name="f_color" value="<?php echo $f_color?>">
             <input type="hidden" name="f_title" value="<?php echo $f_title?>">
@@ -73,7 +73,7 @@ function RedirectToIndex($msg = null, int $severity = 1)
     $f_msg_count = 0;
 
     ?>
-    <form id="redirect-form" action="./index.php" method="post">
+    <form id="redirect-form" action="../index.php" method="post">
         <input type="hidden" name="feedback" value="<?php echo $feedback?>">
         <input type="hidden" name="f_color" value="<?php echo $f_color?>">
         <input type="hidden" name="f_title" value="<?php echo $f_title?>">

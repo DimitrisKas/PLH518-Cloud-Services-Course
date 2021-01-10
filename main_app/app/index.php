@@ -5,6 +5,7 @@ include_once('db_scripts/Models/Users.php');
 include_once('db_scripts/keyrock_api.php');
 include_once('Utils/Random.php');
 include_once('Utils/Logs.php');
+include_once('Utils/util_funcs.php');
 
 logger("-- In index: ");
 
