@@ -126,7 +126,7 @@ else
 
     <div class="main-content">
 
-        <div id="welcome-options">
+        <d id="welcome-options">
             <h3>Welcome back, <?php echo $_SESSION['user_username']?>.</h3>
             <hr/>
             <div class="card welcome-option" onclick="location.href='movies.php';">
@@ -149,10 +149,61 @@ else
                     </div>
                     ';
             ?>
+            <div id="feed-card" class="card">
+                <h5 id="feed-title">Your Feed</h5>
+                <div id="feed-container"></div>
+            </div>
         </div>
 
     </div>
 </body>
 <script>
+
+    let isFeedEmpty = true;
+
+    function getNotifications()
+    {
+        fetch('async/notifications_get.php', {
+            method: 'GET',
+        })
+            .then( response => {
+                response.text()
+                    .then( text => {
+                        let container = document.getElementById("feed-container");
+                        if (text !== "")
+                        {
+                            if (isFeedEmpty === false)
+                            {
+                                container.innerHTML = container.innerHTML + text;
+                            }
+                            else
+                            {
+                                container.innerHTML = text;
+                            }
+                            isFeedEmpty = false;
+                        }
+                        checkIfFeedEmpty();
+                    });
+            });
+        console.log('Called API');
+    }
+
+    function dismissNotification(id)
+    {
+        document.getElementById(id).remove();
+        isFeedEmpty();
+    }
+
+    function checkIfFeedEmpty()
+    {
+        let container = document.getElementById("feed-container");
+        if (container.innerText === "")
+        {
+            container.innerHTML = "<p>You have no new notifications</p>";
+        }
+    }
+
+    getNotifications();
+    setInterval(getNotifications, 3000);
 </script>
 </html>

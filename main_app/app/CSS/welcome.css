@@ -41,3 +41,51 @@
 .welcome-option p {
     margin: 0;
 }
+
+#feed-card {
+    width: 90%;
+    max-width: 20em;
+    padding: 1em 1em;
+}
+
+#feed-title {
+    margin: 0 0 1em 0;
+}
+
+.notif-cont {
+    position:relative;
+    margin-bottom: 0.7em;
+    padding-left:0.3em;
+    border-left: rgba(0,0,0,0) solid 3px;
+}
+
+
+.notif-title {
+    margin:0;
+}
+
+.notif-text {
+    margin:0;
+}
+
+.dismiss-btn {
+    display: none;
+    position: absolute;
+    right:0;
+    top:30%;
+    height: auto;
+    padding:0.3em 0.6em;
+}
+
+
+.notif-cont:hover .dismiss-btn{
+    display: block;
+}
+
+.notif-cont:hover {
+    border-left: red solid 3px;
+}
+
+#feed-container p {
+    margin-bottom: 0;
+}
