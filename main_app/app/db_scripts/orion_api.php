@@ -40,11 +40,11 @@ class Orion_API
                 'value' => $title,
                 'type' => 'Title'
             ],
-            'date_start' => [
+            'date_start_sec' => [
                 'value' => strtotime($date_start),
                 'type' => 'Date'
             ],
-            'date_end' => [
+            'date_end_sec' => [
                 'value' => strtotime($date_end),
                 'type' => 'Date'
             ],
@@ -100,11 +100,11 @@ class Orion_API
                 'value' => $title,
                 'type' => 'Title'
             ],
-            'date_start' => [
+            'date_start_sec' => [
                 'value' => strtotime($date_start),
                 'type' => 'Date'
             ],
-            'date_end' => [
+            'date_end_sec' => [
                 'value' => strtotime($date_end),
                 'type' => 'Date'
             ],
@@ -156,11 +156,11 @@ class Orion_API
         $ch = curl_init();
 
         $fields = [
-            'date_start' => [
+            'date_start_sec' => [
                 'value' => strtotime($date_start),
                 'type' => 'Date'
             ],
-            'date_end' => [
+            'date_end_sec' => [
                 'value' => strtotime($date_end),
                 'type' => 'Date'
             ]
@@ -169,7 +169,7 @@ class Orion_API
         curl_setopt($ch, CURLOPT_URL, "http://orion-proxy:1027/v2/entities/{$id}/attrs");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fields));
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PATCH');
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
             "Content-Type: application/json",
             "X-Auth-token: " . self::WilmaMK
@@ -217,7 +217,7 @@ class Orion_API
         curl_setopt($ch, CURLOPT_URL, "http://orion-proxy:1027/v2/entities/{$id}/attrs");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fields));
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PATCH');
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
             "Content-Type: application/json",
             "X-Auth-token: " . self::WilmaMK
@@ -348,7 +348,7 @@ class Orion_API
 
         $sub_date_sec = strtotime($date_of_interest);
 
-        $url_receive= "http://main-app/async/orion_receive";
+        $url_receive= "http://main-app/async/orion_receive.php";
 
         // Subscription's expiration date. (Today + 20 days) in Orion compatible time-format
         $exp_date = date('Y-m-d', time() + self::DAYS_TO_LIVE)."T00:00:00.00Z";
@@ -366,11 +366,11 @@ class Orion_API
                 ],
                 'condition' => [
                     'attrs' => [
-                        'date_start',
-                        'date_end'
+                        'date_start_sec',
+                        'date_end_sec'
                     ],
                     'expression' => [
-                        'q' => "date_start_sec<$sub_date_sec;date_end_sec>$sub_date_sec"
+                        'q' => "date_start_sec<=$sub_date_sec;date_end_sec>=$sub_date_sec"
                     ]
                 ]
             ],
@@ -379,13 +379,11 @@ class Orion_API
                     'url' => $url_receive,
                     'qs' => [
                         'user' => "{$user_id}",
-                        'change' => 'date'
+                        'reason' => 'date',
+                        'date' => $date_of_interest
                     ]
                 ],
-                'attrs' => [
-                    'date_start',
-                    'date_end',
-                ]
+                "attrsFormat" => "keyValues"
             ],
             'expires' => $exp_date,
             'throttling'=> 5
@@ -411,7 +409,7 @@ class Orion_API
                     'url' => $url_receive,
                     'qs' => [
                         'user' => "{$user_id}",
-                        'change' => 'date'
+                        'reason' => 'isLive'
                     ]
                 ],
                 'attrs' => [
@@ -620,7 +618,7 @@ class Orion_API
             return true;
         }
         else if ($http_code >= 400)
-            logger("Cinema was not created.");
+            logger("Subscription was not created.");
 
         else if (curl_errno($ch) == 6)
             logger("Could not connect to db-service.");
