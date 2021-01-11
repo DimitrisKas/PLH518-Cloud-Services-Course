@@ -344,7 +344,7 @@ class UserM extends User implements iRestObject {
 //        $update_doc = $coll->findOne(
 //            [
 //                'k_id' => $user_k_id,
-//                'subscriptions.movie_id' => $movie_id
+//                'subscriptions
 //            ],
 //        );
 //
@@ -378,5 +378,70 @@ class UserM extends User implements iRestObject {
 
         else
             return Result::withLogMsg(true, );
+    }
+
+
+    /** Add notification to user.
+     * @param string $user_k_id User's Keystore ID
+     * @param string $movie_id Movie's Mongo ID
+     * @param string $reason Reason of notification ('date' or 'isLive')
+     * @return Result
+     */
+    public static function addNotification(string $user_k_id, string $movie_id, string $reason, string $date_of_interest): Result
+    {
+        $movie = MovieM::getOne($movie_id);
+
+        $db = connect();
+        $coll = $db->selectCollection(UserM::COLL_NAME);
+        $update_doc = $coll->findOneAndUpdate(
+            ['k_id' => $user_k_id],
+            ['$addToSet' => [
+                'notifications' => [
+                    'movie_id' => $movie_id,
+                    'movie_title' => $movie->title,
+                    'reason' => $reason,
+                    'date_of_interest' => $date_of_interest,
+                ]
+            ]]
+        );
+
+        if ($update_doc == null)
+            return Result::withLogMsg(false, "Couldn't add notification to user with id: " . $user_k_id, );
+
+        else
+            return Result::withLogMsg(true,  );
+    }
+
+    /** Get and dismiss all Notificationsfrom user
+     * @param string $user_k_id User's Keystore ID
+     * @return array Result array with all the subscriptions
+     */
+    public static function getAndDismissAllNotifications(string $user_k_id): array
+    {
+        $db = connect();
+        $coll = $db->selectCollection(UserM::COLL_NAME);
+        $user_doc = $coll->findOne(['k_id' => $user_k_id]);
+
+        $not_array = array();
+        $i = 0;
+        if (isset($user_doc['notifications']))
+        {
+            foreach($user_doc['notifications'] as $notification)
+            {
+                $not_array[$i++] = $notification;
+            }
+        }
+
+
+        // Delete notifications
+
+        $update_doc = $coll->findOneAndUpdate(
+            ['k_id' => $user_k_id],
+            ['$set' => [
+                'notifications' => []
+            ]]
+        );
+
+        return  $not_array;
     }
 }

@@ -478,6 +478,46 @@ $app->delete('/users/{k_id}/subscriptions/{m_id}', function (Request $request, R
 
 });
 
+// Add /users/{k_id}/notifications
+// - Add a notification to user
+$app->post('/users/{k_id}/notifications', function (Request $request, Response $response, $args) {
+
+    $user_k_id = $args['k_id'];
+
+    // Get all POST parameters
+    $params = (array)$request->getParsedBody();
+    $movie_id = $params["movie_id"];
+    $reason = $params["reason"]; // Reason of notification: 'date' or 'isLive
+    $date_of_interest = $params["date_of_interest"]; // Reason of notification: 'date' or 'isLive
+
+    logger("\n --- At [POST] /users/".$user_k_id."/notifications");
+
+    $result = User::addNotification($user_k_id,$movie_id, $reason, $date_of_interest);
+
+    if ($result->success)
+    {
+        return $response->withStatus(201);
+    }
+    else
+    {
+        $response->getBody()->write($result->msg);
+        return $response->withStatus(403);
+    }
+
+});
+
+
+// Get  /users/{k_id}/notifications
+// - Get and dismiss all user's notifications
+$app->get('/users/{k_id}/notifications', function (Request $request, Response $response, $args) {
+
+    $user_k_id = $args['k_id'];
+    $result = User::getAndDismissAllNotifications($user_k_id);
+
+    $response->getBody()->write(json_encode($result));
+    return $response;
+});
+
 /* =====================
  *        LOGS/OTHER
  * ===================== */

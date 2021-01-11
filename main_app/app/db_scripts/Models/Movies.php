@@ -153,7 +153,7 @@ class Movie
     }
 
 
-    public static function EditMovie($user_id, $id, $title, $start_date, $end_date, $cinema_name, $category):bool
+    public static function EditMovie($user_id, $movie_id, $title, $start_date, $end_date, $cinema_name, $category):bool
     {
         if (empty($title))
         {
@@ -168,7 +168,7 @@ class Movie
         }
 
         $ch = curl_init();
-        $url = "http://db-proxy:9004/users/".$user_id."/movies/".$id;
+        $url = "http://db-proxy:9004/users/".$user_id."/movies/".$movie_id;
         $fields = [
             'title' => $title,
             'start_date' => $start_date,
@@ -198,6 +198,8 @@ class Movie
         {
             logger("Movie succesfully updated!");
             curl_close($ch);
+
+            Orion_API::UpdateDate($movie_id, $start_date, $end_date);
             return true;
         }
         else if ($http_code >= 400)

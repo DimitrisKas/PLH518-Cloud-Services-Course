@@ -706,6 +706,108 @@ class Orion_API
     }
 
 
+    /** Save notification from Orion to user to DB service for later use
+     * @param string $user_id User's keyrock id
+     * @param string $movie_id Movie's Mongo id
+     * @param string $reason Reason of notification ('date' or 'isLive')
+     * @param string|null $date_of_interest Reason that the user is interested (only applicable if reason was 'date')
+     * @return bool Success boolean
+     */
+    static function SaveNotification(string $user_id, string $movie_id, string $reason, string $date_of_interest = null)
+    {
+        $ch = curl_init();
+        $url = "http://db-proxy:9004/users/".$user_id."/notifications";
+        $fields = [
+            'movie_id'   => $movie_id,
+            'reason'   => $reason,
+        ];
+
+        if ( !empty($date_of_interest) )
+            $fields['date_of_interest'] = $date_of_interest;
+
+        $fields_string = http_build_query($fields);
+        logger("Fields String: " . $fields_string);
+
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_POST, true);
+        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch,CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
+
+        // Execute post
+        logger("Sending Request...");
+        $result = curl_exec($ch);
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+        curl_close($ch);
+
+        if ($http_code == 201)
+        {
+            logger("Notification succesfully saved!");
+            return true;
+        }
+        else if ($http_code >= 400)
+            logger("Notification was not created.");
+
+        else if (curl_errno($ch) == 6)
+            logger("Could not connect to db-service.");
+
+        else if (curl_errno($ch) != 0 )
+            logger("An error occured with cURL.
+                        Error: ". curl_error($ch) . " .. errcode: " . curl_errno($ch));
+
+
+        return false;
+    }
+
+    /** Get and dismiss all pending notifications for given user
+     * @param string $user_id User's keyrock id
+     * @return array Array with all the notifications
+     */
+    static function GetAndDismissAllNotifications(string $user_id): array
+    {
+        $ch = curl_init();
+        $url = "http://db-proxy:9004/users/".$user_id."/notifications";
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch,CURLOPT_HTTPHEADER, array( "X-Auth-token: ". K_API::WilmaMK ));
+
+        // Execute post
+        $result = curl_exec($ch);
+
+        // Retrieve HTTP status code
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        logger("HTTP code: ". $http_code);
+        curl_close($ch);
+
+
+        if ($http_code == 200)
+        {
+            return json_decode($result,true);
+        }
+        else if ($http_code >= 400)
+            logger("Notifications were not received.");
+
+        else if (curl_errno($ch) == 6)
+            logger("Could not connect to db-service.");
+
+        else if (curl_errno($ch) != 0 )
+            logger("An error occured with cURL.
+                        Error: ". curl_error($ch) . " .. errcode: " . curl_errno($ch));
+
+        return array();
+    }
+
+
+    /** Extract certain header value with regex from given response
+     * @param string $response
+     * @param string $header_name
+     * @return string
+     */
     static function GetHeaderFromResponse(string $response, string $header_name): string
     {
         if (!preg_match_all('/'.$header_name.': (.*)\\r/', $response, $matches)
