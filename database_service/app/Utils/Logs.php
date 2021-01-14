@@ -23,7 +23,6 @@ function getLogs(): string
         file_put_contents($filename, $data);
     }
 
-
     // Get last 10K characters(bytes) or as many as possible
     if ($filesize < 10000)
         return file_get_contents( $filename, false, null, -$filesize);

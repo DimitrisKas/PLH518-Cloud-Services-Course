@@ -210,7 +210,6 @@ $app->put('/users/{k_id}/cinemas/{c_id}', function (Request $request, Response $
 // - Delete Cinema
 $app->delete('/users/{k_id}/cinemas/{c_id}', function (Request $request, Response $response, $args) {
 
-    $user_k_id = $args['k_id']; // User ID
     $c_id = $args['c_id']; // Cinema ID
     logger("\n --- At [DELETE] /users/{id}/cinemas/{c_id} - (Delete Cinema)");
     $res = Cinema::deleteOne($c_id);

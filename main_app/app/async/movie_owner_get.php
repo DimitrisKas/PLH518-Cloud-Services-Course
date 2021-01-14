@@ -43,7 +43,7 @@ if (isset($_SESSION['login'])
         {
             ?>
             <tr id="user_<?php echo $movie->id?>">
-                <td><div><input id="<?php echo $movie->id?>_id"          type="text" value="<?php echo $movie->id?>"          class="disabled-input" disabled/></div></td>
+                <td><div><input id="<?php echo $movie->id?>_id"          type="text" value="<?php echo $movie->id?>"          class="disabled-input id-field" disabled/></div></td>
                 <td><div><input id="<?php echo $movie->id?>_title"       type="text" value="<?php echo $movie->title?>"       class="custom-input"/></div></td>
                 <td><div><input id="<?php echo $movie->id?>_start_date"  type="date"  min="1997-01-01" max="2030-12-31" value="<?php echo $movie->start_date?>"  class="custom-input"/></div></td>
                 <td><div><input id="<?php echo $movie->id?>_end_date"    type="date"  min="1997-01-01" max="2030-12-31" value="<?php echo $movie->end_date?>"    class="custom-input"/></div></td>

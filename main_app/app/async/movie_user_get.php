@@ -31,7 +31,11 @@ if (isset($_SESSION['login'])
         </tr>
 
         <?php
-        if (isset($_GET['search']))
+        if (isset($_POST['search']))
+        {
+            $movies = Movie::Search($_SESSION['user_id'], $_POST['title'], $_POST['date'], $_POST['cin_name'], $_POST['cat']);
+        }
+        else if(isset($_GET['search']) )
         {
             $movies = Movie::Search($_SESSION['user_id'], $_GET['title'], $_GET['date'], $_GET['cin_name'], $_GET['cat']);
         }

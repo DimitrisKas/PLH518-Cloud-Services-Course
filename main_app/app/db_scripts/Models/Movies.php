@@ -120,7 +120,7 @@ class Movie
 
         if ($http_code == 201 || $http_code == 200)
         {
-            logger("Cinema succesfully created!");
+            logger("Movie succesfully created!");
             curl_close($ch);
 
             $result = json_decode($result, true);
@@ -136,7 +136,7 @@ class Movie
         }
         else if ($http_code >= 400)
         {
-            logger("Cinema was not created.");
+            logger("Movie was not created.");
         }
         else if (curl_errno($ch) == 6)
         {

@@ -329,7 +329,11 @@ else
         // If startDate is empty, in7days will be from today. Otherwise from given startDate
         if (startDate === "")
         {
-            startDate = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+            let month = today.getMonth()+1;
+            let day = today.getDate();
+            let dayStr = ((day < 10) ? "0" : "") + day;
+            let monStr = ((month < 10) ? "0" : "") + month;
+            startDate = today.getFullYear()+'-'+monStr+'-'+dayStr;
             in7days = new Date(today.getTime() +  7 * 24 * 60 * 60 * 1000);
         }
         else
